@@ -216,11 +216,18 @@ def _build_context_message(data: dict[str, Any]) -> str:
     activity_lines = []
 
     if data["type"] == "morning":
-        # Morning: show yesterday's summary
+        # Morning: show yesterday's summary, fallback to today if empty
         total = ya.get("total_active_s", 0)
-        mob = ya.get("mobile", {}).get("total_s", 0)
-        pc = ya.get("pc", {}).get("total_s", 0)
-        activity_lines.append(f"  어제 총 활동: {format_duration(total)} (모바일: {format_duration(mob)}, PC: {format_duration(pc)})")
+        if total == 0:
+            # Fallback to today's data if yesterday has none
+            total = ta.get("total_active_s", 0)
+            mob = ta.get("mobile", {}).get("total_s", 0)
+            pc = ta.get("pc", {}).get("total_s", 0)
+            activity_lines.append(f"  최근 활동: {format_duration(total)} (모바일: {format_duration(mob)}, PC: {format_duration(pc)})")
+        else:
+            mob = ya.get("mobile", {}).get("total_s", 0)
+            pc = ya.get("pc", {}).get("total_s", 0)
+            activity_lines.append(f"  어제 총 활동: {format_duration(total)} (모바일: {format_duration(mob)}, PC: {format_duration(pc)})")
     else:
         # Evening: show today's summary
         total = ta.get("total_active_s", 0)
@@ -233,8 +240,11 @@ def _build_context_message(data: dict[str, Any]) -> str:
             direction = "증가" if diff > 0 else "감소"
             activity_lines.append(f"  어제 대비: {format_duration(abs(diff))} {direction}")
 
-    # Top apps
-    ref_activity = ya if data["type"] == "morning" else ta
+    # Top apps — fallback to today if yesterday is empty for morning
+    if data["type"] == "morning":
+        ref_activity = ya if ya.get("total_active_s", 0) > 0 else ta
+    else:
+        ref_activity = ta
     top_apps = ref_activity.get("top_apps", [])
     if top_apps:
         for app in top_apps[:5]:

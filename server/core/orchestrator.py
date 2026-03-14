@@ -14,16 +14,20 @@ from server.database.db import get_db
 logger = logging.getLogger(__name__)
 
 ORCHESTRATOR_SYSTEM = """당신은 J.A.R.V.I.S 오케스트레이터입니다.
-사용자의 의도를 파악하여 적절한 도구를 호출하세요.
+사용자의 의도를 파악하여 **반드시** 적절한 도구를 호출하세요.
 
-가능한 작업:
-- 일반 대화 → route_to_agent(agent="chat")
-- 브리핑 요청 ("오늘 브리핑", "요약해줘") → route_to_agent(agent="briefing")
-- 할 일 관리 ("할 일 추가", "TODO") → route_to_agent(agent="task")
-- 활동 조회 ("오늘 뭐 했지", "앱 사용 시간") → get_activity_summary
-- 이메일 확인 ("안 읽은 메일") → get_unreplied_emails
-- 일정 확인 ("오늘 일정") → get_upcoming_events
-- 약속 확인 ("약속 현황") → get_promises
+중요: 절대로 도구 없이 직접 답변하지 마세요. 어떤 질문이든 반드시 아래 도구 중 하나를 호출하세요.
+
+라우팅 규칙:
+- 일반 대화/인사/감사 → route_to_agent(agent="chat")
+- 브리핑 ("브리핑", "요약해줘", "정리해줘") → route_to_agent(agent="briefing")
+- 할 일 관리 ("할 일 추가", "TODO", "할 일 보여줘") → route_to_agent(agent="task")
+- 활동 조회 ("오늘 뭐 했어", "앱 사용 시간", "SAP 얼마나") → get_activity_summary
+- 미답장 메일 ("안 읽은 메일", "메일 알려줘") → get_unreplied_emails
+- 일정 ("오늘 일정", "내일 회의") → get_upcoming_events
+- 약속 ("약속 현황") → get_promises
+- 화면에서 본 것 ("웍스에서 뭐 봤어", "XXX 메일 뭐야", "화면에서 본 거") → get_screen_texts
+- 생산성 ("생산성 어때", "생산성 점수", "얼마나 일했어") → get_productivity_score
 
 도구를 호출한 뒤 결과를 바탕으로 사용자에게 자연스럽게 답변하세요.
 한국어로 응답합니다."""
@@ -85,6 +89,28 @@ ORCHESTRATOR_TOOLS = [
             "type": "object",
             "properties": {
                 "status": {"type": "string", "enum": ["pending", "done", "overdue"]},
+            },
+        },
+    },
+    {
+        "name": "get_screen_texts",
+        "description": "PC 화면에서 캡처된 텍스트를 검색합니다. '네이버 웍스에서 뭐 봤어?', '임상민 메일', '어제 뭐 했어?', '화면에서 본 거 알려줘' 등의 질문에 사용합니다. 키워드로 필터링하려면 query에 검색어를 넣으세요.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "query": {"type": "string", "description": "검색할 키워드 (선택)"},
+                "since": {"type": "string", "description": "시작 날짜/시간 (ISO format, 선택)"},
+                "limit": {"type": "integer", "description": "최대 결과 수 (기본 30)"},
+            },
+        },
+    },
+    {
+        "name": "get_productivity_score",
+        "description": "생산성 점수를 조회합니다",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "date": {"type": "string", "description": "조회할 날짜 (YYYY-MM-DD). 미지정시 오늘"},
             },
         },
     },
@@ -167,5 +193,24 @@ async def _execute_tool(
     elif tool_name == "get_promises":
         promises = await crud.get_promises(db, status=tool_input.get("status"))
         return {"promises": promises, "count": len(promises)}
+
+    elif tool_name == "get_screen_texts":
+        query = tool_input.get("query")
+        since = tool_input.get("since")
+        limit = tool_input.get("limit", 30)
+        texts = await crud.get_screen_texts(db, since=since, limit=limit)
+        if query:
+            q_lower = query.lower()
+            texts = [
+                t for t in texts
+                if q_lower in (t.get("extracted_text") or "").lower()
+                or q_lower in (t.get("window_title") or "").lower()
+            ]
+        return {"screen_texts": texts, "count": len(texts)}
+
+    elif tool_name == "get_productivity_score":
+        from server.analytics.productivity_score import calculate_daily_score
+        score = await calculate_daily_score(db, date=tool_input.get("date"))
+        return score
 
     return {"error": f"Unknown tool: {tool_name}"}

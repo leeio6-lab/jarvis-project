@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+from datetime import datetime, timezone
 from typing import Any
 
 from server.agents.base import BaseAgent, call_llm, extract_text, extract_tool_calls
@@ -83,8 +84,11 @@ class TaskAgent(BaseAgent):
         if db is None:
             return "데이터베이스 연결이 필요합니다."
 
+        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        system_with_date = f"{SYSTEM_PROMPT}\n\n오늘 날짜는 {today}입니다. 상대적 날짜 표현(월요일까지, 내일까지 등)은 이 날짜를 기준으로 계산하세요."
+
         messages = [{"role": "user", "content": user_input}]
-        response = await call_llm(messages, tier="medium", system=SYSTEM_PROMPT, tools=TASK_TOOLS)
+        response = await call_llm(messages, tier="medium", system=system_with_date, tools=TASK_TOOLS)
 
         tool_calls = extract_tool_calls(response)
         if not tool_calls:
@@ -103,7 +107,7 @@ class TaskAgent(BaseAgent):
         # Send tool results back to Claude for final response
         messages.append({"role": "assistant", "content": response["content"]})
         messages.append({"role": "user", "content": tool_results})
-        final = await call_llm(messages, tier="medium", system=SYSTEM_PROMPT)
+        final = await call_llm(messages, tier="medium", system=system_with_date)
         return extract_text(final)
 
     async def _execute_tool(self, db, tool_name: str, tool_input: dict) -> dict:
@@ -115,7 +119,13 @@ class TaskAgent(BaseAgent):
                 due_date=tool_input.get("due_date"),
                 priority=tool_input.get("priority", "normal"),
             )
-            return {"success": True, "task_id": task_id, "message": "할 일이 생성되었습니다"}
+            return {
+                "success": True,
+                "task_id": task_id,
+                "title": tool_input["title"],
+                "due_date": tool_input.get("due_date"),
+                "message": "할 일이 생성되었습니다",
+            }
 
         elif tool_name == "list_tasks":
             tasks = await crud.get_tasks(db, status=tool_input.get("status"))
