@@ -1,0 +1,423 @@
+{
+  "timestamp": "2026-03-14T06:16:24.659009+00:00",
+  "results": {
+    "inbox": {
+      "tried": 25,
+      "success": 25,
+      "chars": 32271,
+      "mails": [
+        {
+          "title": "[RPA] 휴폐업처 세금계산서 신고 요청 (2026.03.13)",
+          "sender": "추가하기<rpa@daewoong.co.kr>",
+          "recipient": "윤정훈",
+          "chars": 770,
+          "is_reply": false,
+          "date": "2026.03.13"
+        },
+        {
+          "title": "RE: [개발비] 엔블로멧 초기병용(0.3mg/500mg) 자산화 검토의 건",
+          "sender": "윤덕상<2500739@daewoong.co.kr>",
+          "recipient": "최승대",
+          "chars": 959,
+          "is_reply": true,
+          "date": ""
+        },
+        {
+          "title": "회계1팀 주간업무(3월 2주차) 보고드립니다.",
+          "sender": "윤덕상<2500739@daewoong.co.kr>",
+          "recipient": "김우현",
+          "chars": 579,
+          "is_reply": false,
+          "date": ""
+        },
+        {
+          "title": "[회신] 재무기획본부 AI 교육 프로그램 참석자 리스트 송부",
+          "sender": "임상민<2600066@daewoong.co.kr>",
+          "recipient": "윤정훈",
+          "chars": 520,
+          "is_reply": true,
+          "date": ""
+        },
+        {
+          "title": "[AX INSIGHT] AX 뉴스레터 | 사전 학습 자료 & 과제 신청 가이드",
+          "sender": "AX팀<kyb01@idstrust.com>",
+          "recipient": "윤정훈",
+          "chars": 1828,
+          "is_reply": false,
+          "date": "2026.03.13"
+        },
+        {
+          "title": "26.2월 매출대사 공유",
+          "sender": "박지애<2230547@daewoong.co.kr>",
+          "recipient": "김지환",
+          "chars": 2000,
+          "is_reply": false,
+          "date": ""
+        },
+        {
+          "title": "Re: FW: (협조요청) 재무기획본부 AI기반 업무 혁신 교육 참여 인원 및 과제 선정 요청의 건",
+          "sender": "서태원<taewon3318@daewoong.co.kr>",
+          "recipient": "성호경",
+          "chars": 2000,
+          "is_reply": true,
+          "date": ""
+        },
+        {
+          "title": "[요청] (주)엠서클 오더 1건 세금계산서 발행 요청의 건_2월 오더",
+          "sender": "이효지<2220371@daewoong.co.kr>",
+          "recipient": "박지애",
+          "chars": 701,
+          "is_reply": false,
+          "date": ""
+        },
+        {
+          "title": "FW: [idsTrust] 2026년 대웅/대웅제약 온라인 자산 실사 관련 협조 요청드립니다.",
+          "sender": "윤수민<2240139@daewoong.co.kr>",
+          "recipient": "회계1팀",
+          "chars": 1628,
+          "is_reply": false,
+          "date": ""
+        },
+        {
+          "title": "RE: ✅🆘 2025 연구인력개발비 세액공제 요청자료_연구기간(~3/13,금)",
+          "sender": "이안나<hcuteh@daewoong.co.kr>",
+          "recipient": "박지애",
+          "chars": 1387,
+          "is_reply": true,
+          "date": ""
+        },
+        {
+          "title": "[보고] 판크레아틴(크레온제네릭정) 공동개발 개발비용 자산성 검토 보고",
+          "sender": "박지애<2230547@daewoong.co.kr>",
+          "recipient": "윤덕상",
+          "chars": 2000,
+          "is_reply": false,
+          "date": ""
+        },
+        {
+          "title": "[국책과제] 신규계좌 개설 요청건 (제약 1건)",
+          "sender": "임윤정<yunj1103@daewoong.co.kr>",
+          "recipient": "이예인",
+          "chars": 1471,
+          "is_reply": false,
+          "date": ""
+        },
+        {
+          "title": "[안내] 어린이집 물품판매 안내(3/13 11:30~13:30)",
+          "sender": "성다흰<sdhda@dwdevelop.co.kr>",
+          "recipient": "윤정훈",
+          "chars": 923,
+          "is_reply": false,
+          "date": ""
+        },
+        {
+          "title": "[퇴직인사] 감사했습니다. 늘 행복하시길 바랍니다.",
+          "sender": "권혁란<2210330@daewoong.co.kr>",
+          "recipient": "윤정훈",
+          "chars": 725,
+          "is_reply": false,
+          "date": ""
+        },
+        {
+          "title": "[2026.03.13] 대웅제약 Daily Monitoring (재무기획본부)",
+          "sender": "2팀<s2team@monis.co.kr>",
+          "recipient": "대웅제약",
+          "chars": 1297,
+          "is_reply": false,
+          "date": "2026.03.13"
+        },
+        {
+          "title": "🌸 [리프레시 봄 이벤트] 지금 선마을은 '봄' 준비 완료! 시셀 베개 증정 한정 수량 프로모션 안내!",
+          "sender": "선마을<healience@healience.com>",
+          "recipient": "윤정훈",
+          "chars": 1560,
+          "is_reply": false,
+          "date": ""
+        },
+        {
+          "title": "RE: 서비스업동향조사 2월분 자료 협조 요청",
+          "sender": "윤정훈<2230545@daewoong.co.kr>",
+          "recipient": "이슬아",
+          "chars": 1962,
+          "is_reply": true,
+          "date": ""
+        },
+        {
+          "title": "확인요청 RE: [긴급] 올메텍 불만 시정조치로 인한 예산 확보 안내의 건",
+          "sender": "정효지<jhj0806@daewoong.co.kr>",
+          "recipient": "정효지",
+          "chars": 1378,
+          "is_reply": true,
+          "date": ""
+        },
+        {
+          "title": "[RPA] 휴폐업처 세금계산서 신고 요청 (2026.03.12)",
+          "sender": "추가하기<rpa@daewoong.co.kr>",
+          "recipient": "윤정훈",
+          "chars": 756,
+          "is_reply": false,
+          "date": "2026.03.12"
+        },
+        {
+          "title": "[안내] 구매팀 담당자 변경 안내",
+          "sender": "임윤지<limyoonji@daewoong.co.kr>",
+          "recipient": "김상미",
+          "chars": 2000,
+          "is_reply": false,
+          "date": ""
+        },
+        {
+          "title": "RE: [idsTrust] 25년도 매각 계약 변경 협조 요청의 건",
+          "sender": "백승윤<qortmddbs33@idstrust.com>",
+          "recipient": "유지나",
+          "chars": 1657,
+          "is_reply": true,
+          "date": ""
+        },
+        {
+          "title": "비즈플레이 및 그룹웨어 전표 결재 요청(~3/13 오전 9시)",
+          "sender": "문희원<heewoen98@daewoong.co.kr>",
+          "recipient": "윤덕상",
+          "chars": 676,
+          "is_reply": false,
+          "date": ""
+        },
+        {
+          "title": "그룹사 개인정보보호 배상책임보험 가입 – 구매요청기안 비용 처리 문의",
+          "sender": "정현준<2230166@daewoong.co.kr>",
+          "recipient": "윤정훈",
+          "chars": 831,
+          "is_reply": false,
+          "date": ""
+        },
+        {
+          "title": "RE: [정보보호 의무공시] 2025년 회계 자료 요청의 건",
+          "sender": "김진현<2210591@daewoong.co.kr>",
+          "recipient": "정보보호팀",
+          "chars": 2000,
+          "is_reply": true,
+          "date": ""
+        },
+        {
+          "title": "(광고)🔔[제로샵] 3월 2주차 소식지",
+          "sender": "제로샵<zeroshop@theeasyshop.co.kr",
+          "recipient": "거부",
+          "chars": 663,
+          "is_reply": false,
+          "date": ""
+        }
+      ]
+    },
+    "sent": {
+      "tried": 25,
+      "success": 25,
+      "chars": 33528,
+      "mails": [
+        {
+          "title": "26.02 기타무형자산 및 독점판매권(미상각) 손상검토(MRC)",
+          "sender": "윤정훈<2230545@daewoong.co.kr>",
+          "recipient": "김경선",
+          "chars": 544,
+          "is_reply": false,
+          "date": ""
+        },
+        {
+          "title": "RE: 서비스업동향조사 2월분 자료 협조 요청",
+          "sender": "윤정훈<2230545@daewoong.co.kr>",
+          "recipient": "이슬아",
+          "chars": 1962,
+          "is_reply": true,
+          "date": ""
+        },
+        {
+          "title": "RE: 2026년 1-2월 힐리언스골프 통장내역 전달의 건",
+          "sender": "윤정훈<2230545@daewoong.co.kr>",
+          "recipient": "류가형",
+          "chars": 1641,
+          "is_reply": true,
+          "date": ""
+        },
+        {
+          "title": "류가형프로님",
+          "sender": "윤정훈<2230545@daewoong.co.kr>",
+          "recipient": "윤정훈",
+          "chars": 217,
+          "is_reply": false,
+          "date": ""
+        },
+        {
+          "title": "[TEST] API 발송 확인",
+          "sender": "윤정훈<2230545@daewoong.co.kr>",
+          "recipient": "",
+          "chars": 237,
+          "is_reply": false,
+          "date": ""
+        },
+        {
+          "title": "[TEST] API 발송 테스트 - 수정 후",
+          "sender": "윤정훈<2230545@daewoong.co.kr>",
+          "recipient": "",
+          "chars": 296,
+          "is_reply": false,
+          "date": ""
+        },
+        {
+          "title": "[TEST] API 발송 테스트",
+          "sender": "윤정훈<2230545@daewoong.co.kr>",
+          "recipient": "",
+          "chars": 242,
+          "is_reply": false,
+          "date": ""
+        },
+        {
+          "title": "RE: [결재 문서 공유] [증액][오포장] 불만 시정조치로 인한 포장설비 구매의 건",
+          "sender": "윤정훈<2230545@daewoong.co.kr>",
+          "recipient": "정효지",
+          "chars": 1929,
+          "is_reply": true,
+          "date": ""
+        },
+        {
+          "title": "RE: 계산서 발행 및 국세청 신고요청의 건",
+          "sender": "윤정훈<2230545@daewoong.co.kr>",
+          "recipient": "김수위",
+          "chars": 2000,
+          "is_reply": true,
+          "date": ""
+        },
+        {
+          "title": "RE: 계산서 발행 및 국세청 신고요청의 건_룬드벡",
+          "sender": "윤정훈<2230545@daewoong.co.kr>",
+          "recipient": "정동희",
+          "chars": 2000,
+          "is_reply": true,
+          "date": ""
+        },
+        {
+          "title": "RE: [요청] 대웅제약 세금 계산서 선 발행 요청 (애플약국-오윤경)",
+          "sender": "윤정훈<2230545@daewoong.co.kr>",
+          "recipient": "문건빈",
+          "chars": 950,
+          "is_reply": true,
+          "date": ""
+        },
+        {
+          "title": "RE: [세금계산서 발행 요청] [오송]26.02월분 재활용폐기물 매각비용",
+          "sender": "윤정훈<2230545@daewoong.co.kr>",
+          "recipient": "최지민",
+          "chars": 955,
+          "is_reply": true,
+          "date": ""
+        },
+        {
+          "title": "RE: 26.02 미결 가수금 반제 요청의 건",
+          "sender": "윤정훈<2230545@daewoong.co.kr>",
+          "recipient": "남옥수",
+          "chars": 2000,
+          "is_reply": true,
+          "date": ""
+        },
+        {
+          "title": "26.02 미결 가수금 반제 요청의 건",
+          "sender": "윤정훈<2230545@daewoong.co.kr>",
+          "recipient": "",
+          "chars": 1556,
+          "is_reply": false,
+          "date": ""
+        },
+        {
+          "title": "FW: 신SAP ZBDC tool 관련 문의의 건",
+          "sender": "윤정훈<2230545@daewoong.co.kr>",
+          "recipient": "박지애",
+          "chars": 1567,
+          "is_reply": false,
+          "date": ""
+        },
+        {
+          "title": "RE: 신SAP ZBDC tool 관련 문의의 건",
+          "sender": "윤정훈<2230545@daewoong.co.kr>",
+          "recipient": "윤상호",
+          "chars": 1406,
+          "is_reply": true,
+          "date": ""
+        },
+        {
+          "title": "RE: [검토요청] 대웅그룹 K-IFRS 제1118호 도입 자문 및 시스템 구축업체 선정",
+          "sender": "윤정훈<2230545@daewoong.co.kr>",
+          "recipient": "한철희",
+          "chars": 2000,
+          "is_reply": true,
+          "date": ""
+        },
+        {
+          "title": "RE: 2026년 1-2월 힐리언스골프 통장내역 전달의 건",
+          "sender": "윤정훈<2230545@daewoong.co.kr>",
+          "recipient": "류가형",
+          "chars": 1361,
+          "is_reply": true,
+          "date": ""
+        },
+        {
+          "title": "RE: 카트리지 충전라인 설비 이전 관련건 - 부대합의서 초안 검토 요청의 건",
+          "sender": "윤정훈<2230545@daewoong.co.kr>",
+          "recipient": "박찬신",
+          "chars": 2000,
+          "is_reply": true,
+          "date": ""
+        },
+        {
+          "title": "RE: [공유/요청]뉴트리케어 특허 이전 관련 진행상황 공유 및 추가 확인사항 요청의 건",
+          "sender": "윤정훈<2230545@daewoong.co.kr>",
+          "recipient": "",
+          "chars": 2000,
+          "is_reply": true,
+          "date": ""
+        },
+        {
+          "title": "RE: [공유/요청]뉴트리케어 특허 이전 관련 진행상황 공유 및 추가 확인사항 요청의 건",
+          "sender": "윤정훈<2230545@daewoong.co.kr>",
+          "recipient": "김진일",
+          "chars": 2000,
+          "is_reply": true,
+          "date": ""
+        },
+        {
+          "title": "RE: [요청] IP팀 신규 IO코드 생성 요청(26년 3월)의 건",
+          "sender": "윤정훈<2230545@daewoong.co.kr>",
+          "recipient": "김진일",
+          "chars": 1475,
+          "is_reply": true,
+          "date": ""
+        },
+        {
+          "title": "장비 관련 문의 회신",
+          "sender": "윤정훈<2230545@daewoong.co.kr>",
+          "recipient": "윤정훈",
+          "chars": 358,
+          "is_reply": true,
+          "date": ""
+        },
+        {
+          "title": "FW: [결재 문서 공유] 컴퓨터 지급 신청서(증원,충원,PC충원)",
+          "sender": "윤정훈<2230545@daewoong.co.kr>",
+          "recipient": "박지애",
+          "chars": 832,
+          "is_reply": false,
+          "date": ""
+        },
+        {
+          "title": "RE: 마곡연구소 이사 전 폐기 및 미이전 장비 기한에 대한 건",
+          "sender": "윤정훈<2230545@daewoong.co.kr>",
+          "recipient": "박상준",
+          "chars": 2000,
+          "is_reply": true,
+          "date": ""
+        }
+      ]
+    }
+  },
+  "total_tried": 50,
+  "total_success": 50,
+  "total_chars": 65799,
+  "elapsed_s": 369.90006
+}

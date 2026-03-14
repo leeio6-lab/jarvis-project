@@ -1,0 +1,47 @@
+[
+  {
+    "site": "네이버 뉴스",
+    "url": "https://news.naver.com/",
+    "title": "네이버 뉴스",
+    "text_len": 2000,
+    "pushed": true,
+    "success": true,
+    "elapsed_s": 5.4
+  },
+  {
+    "site": "Google Calendar",
+    "url": "https://calendar.google.com/calendar/u/0/r?pli=1",
+    "title": "Google Calendar - 2026년 3월 8일이 포함된 주",
+    "text_len": 1197,
+    "pushed": true,
+    "success": true,
+    "elapsed_s": 7.1
+  },
+  {
+    "site": "Google 검색",
+    "url": "https://www.google.com/search?q=K-IFRS+%EC%A0%9C1118%ED%98%B",
+    "title": "K-IFRS 제1118호 보험계약 회계기준 - Google 검색",
+    "text_len": 2000,
+    "pushed": true,
+    "success": true,
+    "elapsed_s": 5.5
+  },
+  {
+    "site": "네이버 검색",
+    "url": "https://search.naver.com/search.naver?query=%EB%8C%80%EC%9B%",
+    "title": "대웅제약 회계 : 네이버 검색",
+    "text_len": 2000,
+    "pushed": true,
+    "success": true,
+    "elapsed_s": 5.4
+  },
+  {
+    "site": "네이버 웍스 복귀",
+    "url": "https://mail.worksmobile.com/w/inbox",
+    "title": "받은메일함 : 메일",
+    "text_len": 1998,
+    "pushed": true,
+    "success": true,
+    "elapsed_s": 5.3
+  }
+]

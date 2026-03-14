@@ -1,0 +1,562 @@
+{
+  "timestamp": "2026-03-14T06:22:44.160756+00:00",
+  "api_results": [
+    {
+      "label": "GET /health",
+      "method": "GET",
+      "path": "/health",
+      "status": 200,
+      "elapsed_ms": 269,
+      "success": true,
+      "body_preview": "{'status': 'ok', 'version': '0.1.0', 'message': '시스템 정상 작동 중', 'pc_connected': False}"
+    },
+    {
+      "label": "POST /api/v1/push/activity",
+      "method": "POST",
+      "path": "/api/v1/push/activity",
+      "status": 500,
+      "elapsed_ms": 13,
+      "success": false,
+      "body_preview": "Internal Server Error"
+    },
+    {
+      "label": "POST /api/v1/push/pc-activity",
+      "method": "POST",
+      "path": "/api/v1/push/pc-activity",
+      "status": 0,
+      "elapsed_ms": 2,
+      "success": false,
+      "body_preview": ""
+    },
+    {
+      "label": "POST /api/v1/push/screen-text",
+      "method": "POST",
+      "path": "/api/v1/push/screen-text",
+      "status": 200,
+      "elapsed_ms": 258,
+      "success": true,
+      "body_preview": "{'ingested': {'screen_text': 1}}"
+    },
+    {
+      "label": "POST /api/v1/push/tasks",
+      "method": "POST",
+      "path": "/api/v1/push/tasks",
+      "status": 200,
+      "elapsed_ms": 4,
+      "success": true,
+      "body_preview": "{'task_id': 13, 'message': '할 일이 생성되었습니다'}"
+    },
+    {
+      "label": "PUT /api/v1/push/tasks/13",
+      "method": "PUT",
+      "path": "/api/v1/push/tasks/13",
+      "status": 200,
+      "elapsed_ms": 4,
+      "success": true,
+      "body_preview": "{'success': True, 'message': '할 일이 수정되었습니다'}"
+    },
+    {
+      "label": "GET /api/v1/data/activity/summary",
+      "method": "GET",
+      "path": "/api/v1/data/activity/summary",
+      "status": 200,
+      "elapsed_ms": 2,
+      "success": true,
+      "body_preview": "{'date': '2026-03-14', 'total_active_s': 12365, 'mobile': {'total_s': 7440, 'apps': [{'app': 'KakaoTalk', 'device': 'mobile', 'sessions': 4, 'total_se"
+    },
+    {
+      "label": "GET /api/v1/data/activity/trend",
+      "method": "GET",
+      "path": "/api/v1/data/activity/trend",
+      "status": 200,
+      "elapsed_ms": 5,
+      "success": true,
+      "body_preview": "[{'date': '2026-03-08', 'total_active_s': 0, 'mobile_s': 0, 'pc_s': 0}, {'date': '2026-03-09', 'total_active_s': 0, 'mobile_s': 0, 'pc_s': 0}, {'date'"
+    },
+    {
+      "label": "GET /api/v1/data/emails/unreplied",
+      "method": "GET",
+      "path": "/api/v1/data/emails/unreplied",
+      "status": 200,
+      "elapsed_ms": 1,
+      "success": true,
+      "body_preview": "{'emails': [], 'count': 0}"
+    },
+    {
+      "label": "GET /api/v1/data/promises",
+      "method": "GET",
+      "path": "/api/v1/data/promises",
+      "status": 200,
+      "elapsed_ms": 2,
+      "success": true,
+      "body_preview": "{'promises': [], 'count': 0}"
+    },
+    {
+      "label": "GET /api/v1/data/promises/summary",
+      "method": "GET",
+      "path": "/api/v1/data/promises/summary",
+      "status": 200,
+      "elapsed_ms": 2,
+      "success": true,
+      "body_preview": "{'total': 0, 'pending': 0, 'done': 0, 'overdue': 0, 'pending_items': [], 'overdue_items': [], 'completion_rate': 0.0}"
+    },
+    {
+      "label": "GET /api/v1/data/tasks",
+      "method": "GET",
+      "path": "/api/v1/data/tasks",
+      "status": 200,
+      "elapsed_ms": 2,
+      "success": true,
+      "body_preview": "{'tasks': [{'id': 13, 'title': '월요일까지 보고서 작성', 'description': None, 'due_date': '2026-03-16', 'priority': 'high', 'status': 'in_progress', 'created_at"
+    },
+    {
+      "label": "GET /api/v1/data/transcripts",
+      "method": "GET",
+      "path": "/api/v1/data/transcripts",
+      "status": 200,
+      "elapsed_ms": 1,
+      "success": true,
+      "body_preview": "{'transcripts': [{'id': 6, 'source': 'mic', 'audio_path': None, 'text': '[MOCK] 음성 인식 결과입니다. Deepgram API 키를 설정하면 실제 음성이 변환됩니다.', 'summary': None, 'la"
+    },
+    {
+      "label": "GET /api/v1/data/screen-texts",
+      "method": "GET",
+      "path": "/api/v1/data/screen-texts",
+      "status": 200,
+      "elapsed_ms": 3,
+      "success": true,
+      "body_preview": "{'screen_texts': [{'id': 24, 'app_name': 'saplogon.exe', 'window_title': 'SAP Easy Access', 'extracted_text': '고정자산 등록 - AS01\\n자산번호: 10000123', 'text_"
+    },
+    {
+      "label": "GET /api/v1/data/productivity/score",
+      "method": "GET",
+      "path": "/api/v1/data/productivity/score",
+      "status": 200,
+      "elapsed_ms": 10807,
+      "success": true,
+      "body_preview": "{'date': '2026-03-14', 'score': 45.3, 'grade': 'D', 'components': {'focus': {'score': 94.5, 'weight': 0.4, 'work_s': 7010, 'leisure_s': 5295, 'total_s"
+    },
+    {
+      "label": "GET /api/v1/data/trends/weekly",
+      "method": "GET",
+      "path": "/api/v1/data/trends/weekly",
+      "status": 200,
+      "elapsed_ms": 17,
+      "success": true,
+      "body_preview": "{'period': '2026-03-08 ~ 2026-03-14', 'daily_breakdown': [{'date': '2026-03-08', 'total_active_s': 0, 'mobile_s': 0, 'pc_s': 0, 'score': 0.0}, {'date'"
+    },
+    {
+      "label": "GET /api/v1/data/app-categories",
+      "method": "GET",
+      "path": "/api/v1/data/app-categories",
+      "status": 200,
+      "elapsed_ms": 2,
+      "success": true,
+      "body_preview": "{'categories': {'cursor.exe': {'app_name': 'cursor.exe', 'category': 'work', 'sub_category': 'cursor control utility', 'classified_by': 'auto', 'creat"
+    },
+    {
+      "label": "GET /api/v1/data/notifications",
+      "method": "GET",
+      "path": "/api/v1/data/notifications",
+      "status": 200,
+      "elapsed_ms": 1,
+      "success": true,
+      "body_preview": "{'notifications': [], 'count': 0}"
+    },
+    {
+      "label": "PUT /api/v1/data/app-category",
+      "method": "PUT",
+      "path": "/api/v1/data/app-category",
+      "status": 200,
+      "elapsed_ms": 2,
+      "success": true,
+      "body_preview": "{'app_name': 'kakaotalk.exe', 'category': 'work', 'classified_by': 'user'}"
+    },
+    {
+      "label": "POST /api/v1/data/briefing",
+      "method": "POST",
+      "path": "/api/v1/data/briefing",
+      "status": 200,
+      "elapsed_ms": 5746,
+      "success": true,
+      "body_preview": "{'type': 'morning', 'content': '[2026-03-14 아침 브리핑]\\n\\n1. 오늘의 일정  \\n- 예정된 일정이 없습니다.  \\n- 별도 외부 방문이나 회의 준비 필요 없으니, 내부 업무나 자료 정리에 집중하는 것이 효율적입니다.\\n\\n2. "
+    },
+    {
+      "label": "POST /api/v1/data/briefing",
+      "method": "POST",
+      "path": "/api/v1/data/briefing",
+      "status": 200,
+      "elapsed_ms": 7837,
+      "success": true,
+      "body_preview": "{'type': 'evening', 'content': '오늘 하루 요약을 시작하겠습니다.\\n\\n1. 오늘 하루 요약  \\n오늘 총 활동 시간은 3시간 26분으로, 어제보다 15분 줄었습니다. 모바일 사용 시간이 2시간 4분(약 60%), PC 사용 시간은 1시간 22"
+    },
+    {
+      "label": "POST /api/v1/data/proactive/check",
+      "method": "POST",
+      "path": "/api/v1/data/proactive/check",
+      "status": 200,
+      "elapsed_ms": 2,
+      "success": true,
+      "body_preview": "{'alerts': [], 'count': 0}"
+    },
+    {
+      "label": "POST /api/v1/data/report/weekly",
+      "method": "POST",
+      "path": "/api/v1/data/report/weekly",
+      "status": 200,
+      "elapsed_ms": 6166,
+      "success": true,
+      "body_preview": "{'type': 'weekly', 'content': '[주간 활동 리포트: 2026-03-08 ~ 2026-03-14]\\n\\n1. 주간 개요  \\n이번 주 총 활동 시간은 3시간 26분으로 전주와 동일한 수준을 유지하셨습니다. 꾸준한 활동량이 눈에 띕니다. 모바일 사"
+    },
+    {
+      "label": "POST /api/v1/data/drive/save?filename=test-briefing.md&content_type=briefing",
+      "method": "POST",
+      "path": "/api/v1/data/drive/save?filename=test-briefing.md&content_type=briefing",
+      "status": 200,
+      "elapsed_ms": 6,
+      "success": true,
+      "body_preview": "{'saved': False, 'mock': True, 'filename': 'test-briefing.md'}"
+    },
+    {
+      "label": "DELETE /api/v1/push/tasks/13",
+      "method": "DELETE",
+      "path": "/api/v1/push/tasks/13",
+      "status": 200,
+      "elapsed_ms": 4,
+      "success": true,
+      "body_preview": "{'success': True, 'message': '할 일이 삭제되었습니다'}"
+    },
+    {
+      "label": "CMD: activity",
+      "method": "POST",
+      "path": "/api/v1/command",
+      "status": 200,
+      "elapsed_ms": 3184,
+      "success": true,
+      "body_preview": "{'reply': '오늘은 총 3시간 26분 정도 활동하셨어요. PC에서는 주로 코딩(Code.exe)에 1시간 사용하셨고, 모바일에서는 카카오톡을 4번 사용하며 45분 정도 메시지를 주고받으셨습니다. 슬랙과 삼성 노트 앱도 각각 30분, 20분씩 활용하셨고, 유튜브도"
+    },
+    {
+      "label": "CMD: unreplied",
+      "method": "POST",
+      "path": "/api/v1/command",
+      "status": 200,
+      "elapsed_ms": 1975,
+      "success": true,
+      "body_preview": "{'reply': '현재 미답장 메일이 없습니다. 다른 도움 필요하시면 말씀해주세요!', 'agent': None}"
+    },
+    {
+      "label": "CMD: add_task",
+      "method": "POST",
+      "path": "/api/v1/command",
+      "status": 200,
+      "elapsed_ms": 4423,
+      "success": true,
+      "body_preview": "{'reply': '할 일을 추가해 드렸습니다. 추가로 도와드릴 일이 있을까요?', 'agent': None}"
+    },
+    {
+      "label": "CMD: show_tasks",
+      "method": "POST",
+      "path": "/api/v1/command",
+      "status": 200,
+      "elapsed_ms": 4902,
+      "success": true,
+      "body_preview": "{'reply': '현재 등록된 할 일은 총 2개입니다.\\n1. 보고서 작성 (마감일: 2024-04-22, 상태: 진행 중)\\n2. 보고서 작성 (마감일: 2024-04-15, 상태: 진행 중)\\n\\n필요한 작업(예: 할 일 추가, 수정, 삭제 등)이 있으면 말씀해 "
+    },
+    {
+      "label": "CMD: productivity",
+      "method": "POST",
+      "path": "/api/v1/command",
+      "status": 200,
+      "elapsed_ms": 2101,
+      "success": true,
+      "body_preview": "{'reply': '이번 주 생산성 기록을 확인해본 결과, 아직 활동 기록이 없네요. 더 활발하게 활동하시려면 어떤 도움을 드릴까요?', 'agent': None}"
+    },
+    {
+      "label": "CMD: briefing",
+      "method": "POST",
+      "path": "/api/v1/command",
+      "status": 200,
+      "elapsed_ms": 13610,
+      "success": true,
+      "body_preview": "{'reply': '[2026년 3월 14일 아침 브리핑입니다.]\\n\\n1. 오늘의 일정  \\n- 예정된 일정은 없습니다.  \\n- 사무실 방문 예정이니 SAP 및 네이버 웍스 관련 자료를 미리 점검하면 업무 시작에 도움이 될 것입니다.\\n\\n2. 미답장 이메일  \\n"
+    },
+    {
+      "label": "CMD: screen_text",
+      "method": "POST",
+      "path": "/api/v1/command",
+      "status": 200,
+      "elapsed_ms": 1767,
+      "success": true,
+      "body_preview": "{'reply': '어제 네이버 웍스에서 사용 기록이 없습니다. 다른 궁금한 점 있으신가요?', 'agent': None}"
+    },
+    {
+      "label": "CMD: specific_mail",
+      "method": "POST",
+      "path": "/api/v1/command",
+      "status": 200,
+      "elapsed_ms": 1757,
+      "success": true,
+      "body_preview": "{'reply': '임상민님이 보낸 메일이 현재 도착하지 않았습니다. 다른 메일이나 궁금한 사항 있으신가요?', 'agent': None}"
+    },
+    {
+      "label": "classify: kakaotalk.exe",
+      "method": "POST",
+      "path": "/api/v1/push/pc-activity",
+      "status": 200,
+      "elapsed_ms": 5,
+      "success": true,
+      "body_preview": "{'ingested': {'pc_activity': 1}}"
+    },
+    {
+      "label": "classify: notion.exe",
+      "method": "POST",
+      "path": "/api/v1/push/pc-activity",
+      "status": 200,
+      "elapsed_ms": 4,
+      "success": true,
+      "body_preview": "{'ingested': {'pc_activity': 1}}"
+    },
+    {
+      "label": "classify: figma.exe",
+      "method": "POST",
+      "path": "/api/v1/push/pc-activity",
+      "status": 200,
+      "elapsed_ms": 4,
+      "success": true,
+      "body_preview": "{'ingested': {'pc_activity': 1}}"
+    },
+    {
+      "label": "classify: spotify.exe",
+      "method": "POST",
+      "path": "/api/v1/push/pc-activity",
+      "status": 200,
+      "elapsed_ms": 4,
+      "success": true,
+      "body_preview": "{'ingested': {'pc_activity': 1}}"
+    },
+    {
+      "label": "classify: zoom.exe",
+      "method": "POST",
+      "path": "/api/v1/push/pc-activity",
+      "status": 200,
+      "elapsed_ms": 4,
+      "success": true,
+      "body_preview": "{'ingested': {'pc_activity': 1}}"
+    },
+    {
+      "label": "classify: obsidian.exe",
+      "method": "POST",
+      "path": "/api/v1/push/pc-activity",
+      "status": 200,
+      "elapsed_ms": 4,
+      "success": true,
+      "body_preview": "{'ingested': {'pc_activity': 1}}"
+    },
+    {
+      "label": "classify: line.exe",
+      "method": "POST",
+      "path": "/api/v1/push/pc-activity",
+      "status": 200,
+      "elapsed_ms": 4,
+      "success": true,
+      "body_preview": "{'ingested': {'pc_activity': 1}}"
+    },
+    {
+      "label": "classify: discord.exe",
+      "method": "POST",
+      "path": "/api/v1/push/pc-activity",
+      "status": 200,
+      "elapsed_ms": 4,
+      "success": true,
+      "body_preview": "{'ingested': {'pc_activity': 1}}"
+    },
+    {
+      "label": "classify: vlc.exe",
+      "method": "POST",
+      "path": "/api/v1/push/pc-activity",
+      "status": 200,
+      "elapsed_ms": 4,
+      "success": true,
+      "body_preview": "{'ingested': {'pc_activity': 1}}"
+    },
+    {
+      "label": "classify: calculator.exe",
+      "method": "POST",
+      "path": "/api/v1/push/pc-activity",
+      "status": 200,
+      "elapsed_ms": 4,
+      "success": true,
+      "body_preview": "{'ingested': {'pc_activity': 1}}"
+    },
+    {
+      "label": "classify: saplogon.exe",
+      "method": "POST",
+      "path": "/api/v1/push/pc-activity",
+      "status": 200,
+      "elapsed_ms": 4,
+      "success": true,
+      "body_preview": "{'ingested': {'pc_activity': 1}}"
+    },
+    {
+      "label": "classify: teams.exe",
+      "method": "POST",
+      "path": "/api/v1/push/pc-activity",
+      "status": 200,
+      "elapsed_ms": 4,
+      "success": true,
+      "body_preview": "{'ingested': {'pc_activity': 1}}"
+    },
+    {
+      "label": "classify: slack.exe",
+      "method": "POST",
+      "path": "/api/v1/push/pc-activity",
+      "status": 200,
+      "elapsed_ms": 4,
+      "success": true,
+      "body_preview": "{'ingested': {'pc_activity': 1}}"
+    },
+    {
+      "label": "classify: photoshop.exe",
+      "method": "POST",
+      "path": "/api/v1/push/pc-activity",
+      "status": 200,
+      "elapsed_ms": 4,
+      "success": true,
+      "body_preview": "{'ingested': {'pc_activity': 1}}"
+    },
+    {
+      "label": "classify: terminal.exe",
+      "method": "POST",
+      "path": "/api/v1/push/pc-activity",
+      "status": 200,
+      "elapsed_ms": 4,
+      "success": true,
+      "body_preview": "{'ingested': {'pc_activity': 1}}"
+    },
+    {
+      "label": "GET /api/v1/data/app-categories",
+      "method": "GET",
+      "path": "/api/v1/data/app-categories",
+      "status": 200,
+      "elapsed_ms": 2,
+      "success": true,
+      "body_preview": "{'categories': {'cursor.exe': {'app_name': 'cursor.exe', 'category': 'work', 'sub_category': 'cursor control utility', 'classified_by': 'auto', 'creat"
+    },
+    {
+      "label": "PUT /api/v1/data/app-category",
+      "method": "PUT",
+      "path": "/api/v1/data/app-category",
+      "status": 200,
+      "elapsed_ms": 2,
+      "success": true,
+      "body_preview": "{'app_name': 'kakaotalk.exe', 'category': 'work', 'classified_by': 'user'}"
+    },
+    {
+      "label": "GET /api/v1/data/productivity/score",
+      "method": "GET",
+      "path": "/api/v1/data/productivity/score",
+      "status": 200,
+      "elapsed_ms": 3,
+      "success": true,
+      "body_preview": "{'date': '2026-03-14', 'score': 45.4, 'grade': 'D', 'components': {'focus': {'score': 94.9, 'weight': 0.4, 'work_s': 7550, 'leisure_s': 5595, 'total_s"
+    },
+    {
+      "label": "GET /api/v1/data/trends/weekly",
+      "method": "GET",
+      "path": "/api/v1/data/trends/weekly",
+      "status": 200,
+      "elapsed_ms": 17,
+      "success": true,
+      "body_preview": "{'period': '2026-03-08 ~ 2026-03-14', 'daily_breakdown': [{'date': '2026-03-08', 'total_active_s': 0, 'mobile_s': 0, 'pc_s': 0, 'score': 0.0}, {'date'"
+    },
+    {
+      "label": "WS /ws/pc-client",
+      "method": "WS",
+      "path": "/ws/pc-client",
+      "status": 200,
+      "elapsed_ms": 0,
+      "success": true,
+      "body_preview": "pong"
+    }
+  ],
+  "command_results": [
+    {
+      "command": "오늘 뭐했어?",
+      "reply": "오늘은 총 3시간 26분 정도 활동하셨어요. PC에서는 주로 코딩(Code.exe)에 1시간 사용하셨고, 모바일에서는 카카오톡을 4번 사용하며 45분 정도 메시지를 주고받으셨습니다. 슬랙과 삼성 노트 앱도 각각 30분, 20분씩 활용하셨고, 유튜브도 10분 정도 시청하셨네요. 전반적으로 업무와 커뮤니케이션, 그리고 간간히 영상 시청을 병행하신 하루였습니다. 다른 정보도 필요하시면 알려주세요!",
+      "agent": null,
+      "elapsed_s": 3.2,
+      "reply_len": 220
+    },
+    {
+      "command": "미답장 메일 알려줘",
+      "reply": "현재 미답장 메일이 없습니다. 다른 도움 필요하시면 말씀해주세요!",
+      "agent": null,
+      "elapsed_s": 2.0,
+      "reply_len": 36
+    },
+    {
+      "command": "할 일 추가해줘. 월요일까지 보고서 작성",
+      "reply": "할 일을 추가해 드렸습니다. 추가로 도와드릴 일이 있을까요?",
+      "agent": null,
+      "elapsed_s": 4.4,
+      "reply_len": 33
+    },
+    {
+      "command": "할 일 보여줘",
+      "reply": "현재 등록된 할 일은 총 2개입니다.\n1. 보고서 작성 (마감일: 2024-04-22, 상태: 진행 중)\n2. 보고서 작성 (마감일: 2024-04-15, 상태: 진행 중)\n\n필요한 작업(예: 할 일 추가, 수정, 삭제 등)이 있으면 말씀해 주세요.",
+      "agent": null,
+      "elapsed_s": 4.9,
+      "reply_len": 139
+    },
+    {
+      "command": "이번 주 생산성 어때?",
+      "reply": "이번 주 생산성 기록을 확인해본 결과, 아직 활동 기록이 없네요. 더 활발하게 활동하시려면 어떤 도움을 드릴까요?",
+      "agent": null,
+      "elapsed_s": 2.1,
+      "reply_len": 63
+    },
+    {
+      "command": "브리핑 만들어줘",
+      "reply": "[2026년 3월 14일 아침 브리핑입니다.]\n\n1. 오늘의 일정  \n- 예정된 일정은 없습니다.  \n- 사무실 방문 예정이니 SAP 및 네이버 웍스 관련 자료를 미리 점검하면 업무 시작에 도움이 될 것입니다.\n\n2. 미답장 이메일  \n- Outlook에서 미답장 이메일 3건이 확인되었습니다.  \n- 중요 메일과 문의 건이 포함되어 있으니 우선 확인 후 답장하시길 권장드립니다.\n\n3. 약속 이행 현황  \n- 오늘 및 이번 주 마감 예정인 약속 기록과 지연된 약속은 없습니다.\n\n4. 어제 활동 요약  \n- 총 PC 및 모바일 활동 시",
+      "agent": null,
+      "elapsed_s": 13.6,
+      "reply_len": 728
+    },
+    {
+      "command": "어제 네이버 웍스에서 뭐 봤어?",
+      "reply": "어제 네이버 웍스에서 사용 기록이 없습니다. 다른 궁금한 점 있으신가요?",
+      "agent": null,
+      "elapsed_s": 1.8,
+      "reply_len": 40
+    },
+    {
+      "command": "임상민이 보낸 메일 뭐야?",
+      "reply": "임상민님이 보낸 메일이 현재 도착하지 않았습니다. 다른 메일이나 궁금한 사항 있으신가요?",
+      "agent": null,
+      "elapsed_s": 1.8,
+      "reply_len": 49
+    }
+  ],
+  "bugs": [
+    {
+      "type": "API",
+      "path": "/api/v1/push/activity",
+      "status": 500,
+      "body": "Internal Server Error"
+    },
+    {
+      "type": "API",
+      "path": "/api/v1/push/pc-activity",
+      "error": ""
+    },
+    {
+      "type": "BUG",
+      "desc": "OAuth /auth/google/login 엔드포인트 미구현"
+    }
+  ],
+  "total_apis": 53,
+  "success_apis": 51,
+  "failed_apis": 2,
+  "avg_ms": 1226,
+  "elapsed_total_s": 67
+}
