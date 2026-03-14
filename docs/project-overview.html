@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>J.A.R.V.I.S — Project Overview</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Noto+Sans+KR:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0a0a0f;--bg2:#12121a;--bg3:#1a1a28;--bg4:#222236;
+  --text:#e0e0ee;--text2:#9090aa;--text3:#606078;
+  --accent:#00d4ff;--accent2:#7b61ff;--accent3:#ff6b9d;--accent4:#00e88f;
+  --border:#2a2a40;
+  --glow:0 0 30px rgba(0,212,255,.15);
+}
+html{scroll-behavior:smooth;font-size:16px}
+body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-serif;font-weight:400;line-height:1.7;overflow-x:hidden}
+
+/* Noise overlay */
+body::before{content:'';position:fixed;inset:0;background:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");pointer-events:none;z-index:9999;opacity:.4}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:3px}
+
+/* Layout */
+.container{max-width:1200px;margin:0 auto;padding:0 2rem}
+
+/* Header */
+.hero{min-height:100vh;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;width:600px;height:600px;background:radial-gradient(circle,rgba(0,212,255,.08) 0%,transparent 70%);top:-200px;right:-100px;pointer-events:none}
+.hero::after{content:'';position:absolute;width:400px;height:400px;background:radial-gradient(circle,rgba(123,97,255,.06) 0%,transparent 70%);bottom:-100px;left:-100px;pointer-events:none}
+.hero-content{text-align:center;position:relative;z-index:1}
+.hero-badge{display:inline-block;padding:.4rem 1.2rem;border:1px solid var(--accent);border-radius:100px;font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--accent);letter-spacing:.1em;text-transform:uppercase;margin-bottom:2rem;animation:fadeIn .8s ease}
+.hero h1{font-size:clamp(3rem,8vw,6rem);font-weight:900;letter-spacing:-.03em;line-height:1;margin-bottom:1rem;background:linear-gradient(135deg,var(--text) 0%,var(--accent) 50%,var(--accent2) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:fadeIn 1s ease}
+.hero-sub{font-size:1.25rem;color:var(--text2);max-width:600px;margin:0 auto 3rem;font-weight:300;animation:fadeIn 1.2s ease}
+.hero-stats{display:flex;gap:3rem;justify-content:center;flex-wrap:wrap;animation:fadeUp 1.4s ease}
+.stat{text-align:center}
+.stat-num{font-family:'JetBrains Mono',monospace;font-size:2.5rem;font-weight:700;color:var(--accent);display:block}
+.stat-label{font-size:.8rem;color:var(--text3);text-transform:uppercase;letter-spacing:.1em}
+
+/* Sections */
+section{padding:6rem 0;border-top:1px solid var(--border)}
+.section-tag{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--accent);letter-spacing:.15em;text-transform:uppercase;margin-bottom:.5rem}
+.section-title{font-size:2rem;font-weight:700;margin-bottom:2.5rem;letter-spacing:-.02em}
+
+/* Comparison table */
+.comparison{display:grid;grid-template-columns:1fr 1fr;gap:2rem;margin:2rem 0}
+.comp-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:2rem;position:relative;overflow:hidden}
+.comp-card.jarvis{border-color:var(--accent);box-shadow:var(--glow)}
+.comp-card h3{font-size:1.1rem;font-weight:700;margin-bottom:1.5rem;display:flex;align-items:center;gap:.5rem}
+.comp-card h3 .dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.comp-card.other h3 .dot{background:var(--text3)}
+.comp-card.jarvis h3 .dot{background:var(--accent);box-shadow:0 0 8px var(--accent)}
+.comp-list{list-style:none}
+.comp-list li{padding:.5rem 0;border-bottom:1px solid var(--border);font-size:.9rem;display:flex;align-items:center;gap:.5rem}
+.comp-list li:last-child{border:none}
+.comp-list .icon-x{color:var(--accent3);font-weight:700}
+.comp-list .icon-o{color:var(--accent4);font-weight:700}
+
+/* Architecture */
+.arch-diagram{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:3rem;margin:2rem 0;overflow-x:auto}
+.arch-flow{display:flex;align-items:center;justify-content:center;gap:1rem;flex-wrap:wrap;min-width:700px}
+.arch-node{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:1rem 1.5rem;text-align:center;min-width:120px;transition:all .3s}
+.arch-node:hover{border-color:var(--accent);transform:translateY(-2px)}
+.arch-node .node-icon{font-size:1.5rem;margin-bottom:.3rem}
+.arch-node .node-label{font-size:.8rem;font-weight:600}
+.arch-node .node-sub{font-size:.65rem;color:var(--text3)}
+.arch-node.server{border-color:var(--accent);background:linear-gradient(135deg,var(--bg3),rgba(0,212,255,.08))}
+.arch-arrow{color:var(--text3);font-family:'JetBrains Mono',monospace;font-size:.8rem;white-space:nowrap}
+.arch-row{display:flex;align-items:center;justify-content:center;gap:1rem;margin:1rem 0}
+
+/* Data sources grid */
+.source-grid{display:grid;grid-template-columns:1fr 1fr;gap:2rem;margin:2rem 0}
+.source-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:2rem}
+.source-card h3{font-size:1rem;font-weight:700;margin-bottom:1rem;color:var(--accent)}
+.source-item{display:flex;justify-content:space-between;align-items:center;padding:.5rem 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:.85rem}
+.source-item:last-child{border:none}
+.source-item .tag{font-family:'JetBrains Mono',monospace;font-size:.65rem;padding:.15rem .5rem;border-radius:4px;background:var(--bg4)}
+
+/* Feature cards */
+.feature-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:1.5rem;margin:2rem 0}
+.feature-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:1.8rem;transition:all .3s}
+.feature-card:hover{border-color:var(--accent2);transform:translateY(-3px)}
+.feature-card .f-icon{font-size:1.8rem;margin-bottom:.8rem}
+.feature-card h3{font-size:1rem;font-weight:700;margin-bottom:.5rem}
+.feature-card p{font-size:.85rem;color:var(--text2);line-height:1.6}
+.feature-card .f-tag{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.6rem;padding:.2rem .5rem;border-radius:4px;background:rgba(0,212,255,.1);color:var(--accent);margin-top:.8rem}
+
+/* Sample briefing */
+.briefing-sample{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:2rem;margin:2rem 0;font-size:.85rem;line-height:1.8}
+.briefing-sample h4{color:var(--accent);font-size:.9rem;margin-bottom:1rem;font-family:'JetBrains Mono',monospace}
+.briefing-sample .b-section{margin-bottom:1rem;padding-left:1rem;border-left:2px solid var(--bg4)}
+.briefing-sample .b-section strong{color:var(--text);display:block;margin-bottom:.3rem}
+.briefing-sample .b-section span{color:var(--text2)}
+
+/* API table */
+.api-table{width:100%;border-collapse:collapse;margin:2rem 0;font-size:.85rem}
+.api-table th{text-align:left;padding:.8rem 1rem;background:var(--bg3);border:1px solid var(--border);font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--accent);text-transform:uppercase;letter-spacing:.05em}
+.api-table td{padding:.6rem 1rem;border:1px solid var(--border);vertical-align:top}
+.api-table tr:hover td{background:rgba(0,212,255,.03)}
+.method{font-family:'JetBrains Mono',monospace;font-size:.75rem;font-weight:700;padding:.15rem .5rem;border-radius:3px}
+.method.get{color:#00e88f;background:rgba(0,232,143,.1)}
+.method.post{color:#00d4ff;background:rgba(0,212,255,.1)}
+.method.put{color:#ffb84d;background:rgba(255,184,77,.1)}
+.method.delete{color:#ff6b9d;background:rgba(255,107,157,.1)}
+.method.ws{color:#7b61ff;background:rgba(123,97,255,.1)}
+.api-path{font-family:'JetBrains Mono',monospace;font-size:.8rem}
+
+/* Status */
+.status-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin:2rem 0}
+.status-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:1.5rem;text-align:center}
+.status-card .s-num{font-family:'JetBrains Mono',monospace;font-size:2rem;font-weight:700;color:var(--accent)}
+.status-card .s-label{font-size:.8rem;color:var(--text2);margin-top:.3rem}
+
+.status-table{width:100%;border-collapse:collapse;margin:1.5rem 0;font-size:.85rem}
+.status-table td{padding:.5rem 1rem;border-bottom:1px solid var(--border)}
+.status-table td:first-child{color:var(--text2);width:40%}
+.badge{font-family:'JetBrains Mono',monospace;font-size:.7rem;padding:.2rem .6rem;border-radius:4px;font-weight:600}
+.badge.live{background:rgba(0,232,143,.15);color:#00e88f}
+.badge.mock{background:rgba(255,184,77,.15);color:#ffb84d}
+.badge.planned{background:rgba(123,97,255,.15);color:#7b61ff}
+
+/* Timeline */
+.timeline{position:relative;padding-left:2rem;margin:2rem 0}
+.timeline::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:linear-gradient(to bottom,var(--accent),var(--accent2),var(--accent3))}
+.tl-item{position:relative;margin-bottom:2rem;padding-left:1.5rem}
+.tl-item::before{content:'';position:absolute;left:-2.35rem;top:.4rem;width:12px;height:12px;border-radius:50%;background:var(--bg);border:2px solid var(--accent)}
+.tl-item.done::before{background:var(--accent4);border-color:var(--accent4)}
+.tl-item.current::before{background:var(--accent);border-color:var(--accent);box-shadow:0 0 10px var(--accent)}
+.tl-item h4{font-size:.95rem;font-weight:700;margin-bottom:.3rem}
+.tl-item p{font-size:.8rem;color:var(--text2)}
+.tl-item .tl-date{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text3)}
+
+/* Pricing */
+.pricing-grid{display:grid;grid-template-columns:1fr 1fr;gap:2rem;margin:2rem 0}
+.price-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:2rem;position:relative}
+.price-card.pro{border-color:var(--accent);box-shadow:var(--glow)}
+.price-card .price-name{font-size:1rem;font-weight:700;margin-bottom:.3rem}
+.price-card .price-amount{font-family:'JetBrains Mono',monospace;font-size:2rem;font-weight:700;color:var(--accent);margin-bottom:1rem}
+.price-card .price-amount span{font-size:.9rem;color:var(--text3);font-weight:400}
+.price-features{list-style:none;font-size:.85rem}
+.price-features li{padding:.4rem 0;display:flex;align-items:center;gap:.5rem}
+.price-features li::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--accent4);flex-shrink:0}
+
+/* Mobile table */
+.mobile-table{width:100%;border-collapse:collapse;margin:1.5rem 0;font-size:.85rem}
+.mobile-table th{text-align:left;padding:.7rem 1rem;background:var(--bg3);border:1px solid var(--border);font-size:.8rem;font-weight:600}
+.mobile-table td{padding:.5rem 1rem;border:1px solid var(--border)}
+
+/* Animations */
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.reveal{opacity:0;transform:translateY(20px);transition:all .6s ease}
+.reveal.visible{opacity:1;transform:translateY(0)}
+
+/* Nav */
+.nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:.8rem 0;backdrop-filter:blur(20px);background:rgba(10,10,15,.8);border-bottom:1px solid rgba(255,255,255,.05);transform:translateY(-100%);transition:transform .3s}
+.nav.visible{transform:translateY(0)}
+.nav-inner{max-width:1200px;margin:0 auto;padding:0 2rem;display:flex;align-items:center;justify-content:space-between}
+.nav-logo{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:.9rem;color:var(--accent)}
+.nav-links{display:flex;gap:1.5rem}
+.nav-links a{font-size:.8rem;color:var(--text2);text-decoration:none;transition:color .2s}
+.nav-links a:hover{color:var(--accent)}
+
+@media(max-width:768px){
+  .comparison,.source-grid,.pricing-grid{grid-template-columns:1fr}
+  .hero h1{font-size:2.5rem}
+  .hero-stats{gap:1.5rem}
+  .arch-flow{min-width:auto;flex-direction:column}
+  .feature-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<nav class="nav" id="nav">
+  <div class="nav-inner">
+    <div class="nav-logo">J.A.R.V.I.S</div>
+    <div class="nav-links">
+      <a href="#architecture">Architecture</a>
+      <a href="#crawling">Crawling</a>
+      <a href="#features">Features</a>
+      <a href="#api">API</a>
+      <a href="#status">Status</a>
+    </div>
+  </div>
+</nav>
+
+<!-- Hero -->
+<header class="hero">
+  <div class="hero-content">
+    <div class="hero-badge">Phase 0–3 Complete</div>
+    <h1>J.A.R.V.I.S</h1>
+    <p class="hero-sub">PC + 모바일 양쪽 활동을 크롤링하고<br>안 시켜도 알아서 챙기는 AI 비서</p>
+    <div class="hero-stats">
+      <div class="stat"><span class="stat-num">90</span><span class="stat-label">Python Files</span></div>
+      <div class="stat"><span class="stat-num">73</span><span class="stat-label">Tests Passing</span></div>
+      <div class="stat"><span class="stat-num">13</span><span class="stat-label">DB Tables</span></div>
+      <div class="stat"><span class="stat-num">26</span><span class="stat-label">API Endpoints</span></div>
+      <div class="stat"><span class="stat-num">6</span><span class="stat-label">AI Agents</span></div>
+    </div>
+  </div>
+</header>
+
+<!-- 1. Comparison -->
+<section>
+  <div class="container">
+    <div class="section-tag">01 / Differentiation</div>
+    <h2 class="section-title">ChatGPT Pulse vs J.A.R.V.I.S</h2>
+    <div class="comparison">
+      <div class="comp-card other">
+        <h3><span class="dot"></span>ChatGPT Pulse / OpenClaw</h3>
+        <ul class="comp-list">
+          <li><span class="icon-o">O</span> 캘린더 읽기</li>
+          <li><span class="icon-o">O</span> 이메일 읽기 (Gmail API)</li>
+          <li><span class="icon-x">X</span> PC 활동 추적</li>
+          <li><span class="icon-x">X</span> 모바일 앱 사용 시간</li>
+          <li><span class="icon-x">X</span> 화면 텍스트 추출</li>
+          <li><span class="icon-x">X</span> 녹음 → 약속 추출 → 이행 추적</li>
+          <li><span class="icon-x">X</span> 프로액티브 알림</li>
+          <li><span class="icon-x">X</span> 생산성 점수</li>
+          <li><span class="icon-x">X</span> Claude Code 연동</li>
+          <li><span class="icon-x">X</span> API 없이 아무 앱 읽기</li>
+        </ul>
+      </div>
+      <div class="comp-card jarvis">
+        <h3><span class="dot"></span>J.A.R.V.I.S</h3>
+        <ul class="comp-list">
+          <li><span class="icon-o">O</span> 캘린더 읽기</li>
+          <li><span class="icon-o">O</span> 이메일 읽기 (API + UIAutomation)</li>
+          <li><span class="icon-o">O</span> PC 활성 윈도우 5초 추적</li>
+          <li><span class="icon-o">O</span> 모바일 앱 사용 시간</li>
+          <li><span class="icon-o">O</span> UIAutomation 화면 텍스트 추출</li>
+          <li><span class="icon-o">O</span> 녹음 → 전사 → 약속 자동 추출</li>
+          <li><span class="icon-o">O</span> 4종 프로액티브 알림 (30분 간격)</li>
+          <li><span class="icon-o">O</span> 4-컴포넌트 생산성 점수</li>
+          <li><span class="icon-o">O</span> Claude Code CLI 원격 실행</li>
+          <li><span class="icon-o">O</span> SAP, 네이버웍스 등 아무 앱 읽기</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 2. Architecture -->
+<section id="architecture">
+  <div class="container">
+    <div class="section-tag">02 / Architecture</div>
+    <h2 class="section-title">시스템 아키텍처</h2>
+    <div class="arch-diagram">
+      <div class="arch-row">
+        <div class="arch-node">
+          <div class="node-icon">📱</div>
+          <div class="node-label">Mobile App</div>
+          <div class="node-sub">Flutter (Phase 4)</div>
+        </div>
+        <div class="arch-arrow">── app usage, location, calls ──▶</div>
+        <div class="arch-node server">
+          <div class="node-icon">🧠</div>
+          <div class="node-label">FastAPI Server</div>
+          <div class="node-sub">Claude Sonnet + Haiku</div>
+        </div>
+        <div class="arch-arrow">── briefings, reports ──▶</div>
+        <div class="arch-node">
+          <div class="node-icon">☁️</div>
+          <div class="node-label">Google Drive</div>
+          <div class="node-sub">Zero-retention 저장</div>
+        </div>
+      </div>
+      <div class="arch-row">
+        <div class="arch-node">
+          <div class="node-icon">🖥️</div>
+          <div class="node-label">PC Client</div>
+          <div class="node-sub">Windows + 음성</div>
+        </div>
+        <div class="arch-arrow">── window, screen text, voice ──▶</div>
+        <div class="arch-node server">
+          <div class="node-icon">💾</div>
+          <div class="node-label">SQLite DB</div>
+          <div class="node-sub">13 tables</div>
+        </div>
+        <div class="arch-arrow">── WebSocket ◀──▶</div>
+        <div class="arch-node">
+          <div class="node-icon">⌨️</div>
+          <div class="node-label">Claude Code</div>
+          <div class="node-sub">CLI 원격 실행</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 3. Crawling Data Sources -->
+<section id="crawling">
+  <div class="container">
+    <div class="section-tag">03 / Data Sources — 핵심 차별점</div>
+    <h2 class="section-title">크롤링 데이터 소스</h2>
+    <div class="source-grid">
+      <div class="source-card">
+        <h3>🖥️ PC Crawling</h3>
+        <div class="source-item"><span>활성 윈도우 추적</span><span class="tag">5초 간격</span></div>
+        <div class="source-item"><span>화면 텍스트 (UIAutomation)</span><span class="tag">30초 간격</span></div>
+        <div class="source-item"><span>브라우저 탭 + 카테고리 분류</span><span class="tag">자동</span></div>
+        <div class="source-item"><span>파일 변경 감지 (watchdog)</span><span class="tag">실시간</span></div>
+        <div class="source-item"><span>Idle 감지 (GetLastInputInfo)</span><span class="tag">자동</span></div>
+        <div class="source-item"><span>프로세스명 + PID 추적</span><span class="tag">ctypes</span></div>
+      </div>
+      <div class="source-card">
+        <h3>📱 Mobile Crawling</h3>
+        <div class="source-item"><span>앱 사용 시간</span><span class="tag">push</span></div>
+        <div class="source-item"><span>통화 기록</span><span class="tag">push</span></div>
+        <div class="source-item"><span>위치 데이터</span><span class="tag">push</span></div>
+        <div class="source-item"><span>Gmail 미답장 추적</span><span class="tag">API+UIAuto</span></div>
+        <div class="source-item"><span>Google Calendar 동기화</span><span class="tag">API</span></div>
+        <div class="source-item"><span>녹음 전사 + 약속 추출</span><span class="tag">Deepgram+Haiku</span></div>
+      </div>
+    </div>
+
+    <h3 style="margin:2rem 0 1rem;font-size:1.1rem">Android vs iOS 차이</h3>
+    <table class="mobile-table">
+      <tr><th>기능</th><th>Android</th><th>iOS</th></tr>
+      <tr><td>앱 사용 시간</td><td>UsageStatsManager (정확)</td><td>Screen Time API (제한적)</td></tr>
+      <tr><td>통화 기록</td><td>CallLog Provider (전체)</td><td>CallKit (제한적)</td></tr>
+      <tr><td>알림 접근</td><td>NotificationListenerService</td><td>UNUserNotificationCenter (제한)</td></tr>
+      <tr><td>백그라운드 실행</td><td>ForegroundService (지속적)</td><td>Background Fetch (15분)</td></tr>
+      <tr><td>위치 추적</td><td>FusedLocationProvider</td><td>CLLocationManager</td></tr>
+      <tr><td>녹음 접근</td><td>MediaRecorder (자유)</td><td>AVAudioSession (제한적)</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- 4. Features -->
+<section id="features">
+  <div class="container">
+    <div class="section-tag">04 / Features</div>
+    <h2 class="section-title">비서 기능 목록</h2>
+
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="f-icon">📋</div>
+        <h3>아침 브리핑 (8개 소스 종합)</h3>
+        <p>일정 + 미답장 메일 + 약속 이행 + 모바일 앱 사용 + PC 활동 + 녹음 전사 + 위치 + 화면 텍스트를 종합한 맞춤 브리핑</p>
+        <div class="f-tag">Claude Sonnet</div>
+      </div>
+      <div class="feature-card">
+        <div class="f-icon">🔔</div>
+        <h3>프로액티브 알림 4종</h3>
+        <p>미답장 메일 (24/48h) · 마감 임박 (24h) · 약속 지연 (자동 overdue) · 야근 감지 (22시+)</p>
+        <div class="f-tag">30분 간격 자동 체크</div>
+      </div>
+      <div class="feature-card">
+        <div class="f-icon">🎙️</div>
+        <h3>"자비스" 음성 명령</h3>
+        <p>Picovoice 웨이크워드 → sounddevice 녹음 → Deepgram STT → Claude 처리 → edge-tts 응답</p>
+        <div class="f-tag">커스텀 한국어 .ppn</div>
+      </div>
+      <div class="feature-card">
+        <div class="f-icon">🎯</div>
+        <h3>녹음 → 약속 추출 → 이행 추적</h3>
+        <p>"금요일까지 보고서 수정하겠습니다" → Claude Haiku가 약속 추출 → DB 저장 → 프로액티브 추적</p>
+        <div class="f-tag">현존하는 제품에 없는 기능</div>
+      </div>
+      <div class="feature-card">
+        <div class="f-icon">📊</div>
+        <h3>생산성 점수 + 주간 트렌드</h3>
+        <p>Focus(40%) + Deep Work(30%) + Tasks(20%) + Promises(10%) = S/A/B/C/D 등급. 긍정적 톤.</p>
+        <div class="f-tag">주간/월간 리포트</div>
+      </div>
+      <div class="feature-card">
+        <div class="f-icon">👁️</div>
+        <h3>화면 텍스트 추출 (UIAutomation)</h3>
+        <p>스크린샷 없이 텍스트만 추출. SAP, 네이버웍스, 메일 클라이언트 등 API 없이 아무 앱 읽기. 비밀번호 창 자동 스킵.</p>
+        <div class="f-tag">Gmail API 의존 제거</div>
+      </div>
+      <div class="feature-card">
+        <div class="f-icon">⌨️</div>
+        <h3>Claude Code 원격 실행</h3>
+        <p>WebSocket으로 PC에 코드 실행 요청 → subprocess.Popen + CREATE_NEW_PROCESS_GROUP → JSON 결과 반환</p>
+        <div class="f-tag">600초 타임아웃</div>
+      </div>
+      <div class="feature-card">
+        <div class="f-icon">☁️</div>
+        <h3>Google Drive 자동 저장</h3>
+        <p>전사, 브리핑, 리포트를 유저 Drive에 자동 저장. 서버 zero-retention 보안.</p>
+        <div class="f-tag">JARVIS 폴더 자동 생성</div>
+      </div>
+    </div>
+
+    <!-- Sample Briefing -->
+    <h3 style="margin:3rem 0 1rem;font-size:1.1rem">샘플 아침 브리핑</h3>
+    <div class="briefing-sample">
+      <h4>// JARVIS MORNING BRIEFING — 2026-03-14</h4>
+      <div class="b-section">
+        <strong>1. 오늘의 일정</strong>
+        <span>09:00 팀 스탠드업 (회의실 A) · 11:00 1:1 미팅 with 팀장 · 14:00 프로젝트 리뷰 (대회의실)</span>
+      </div>
+      <div class="b-section">
+        <strong>2. 미답장 이메일 (2건)</strong>
+        <span>[high] Q1 보고서 검토 요청 (boss@company.com, 30시간 전) · [normal] 팀 회식 투표 (hr@company.com)</span>
+      </div>
+      <div class="b-section">
+        <strong>3. 약속 이행 현황</strong>
+        <span>[지연] 보고서 제출 (마감: 어제) · [대기] API 연동 확인 (마감: 내일)</span>
+      </div>
+      <div class="b-section">
+        <strong>4. 어제 활동 요약</strong>
+        <span>총 8시간 12분 (모바일 2시간, PC 6시간 12분) · Top: VSCode 3시간, Chrome 1시간 40분, Slack 52분</span>
+      </div>
+      <div class="b-section">
+        <strong>5. 화면 활동 요약</strong>
+        <span>네이버 웍스에서 김부장 메일 확인 (미답장) · SAP 고정자산 화면에서 2시간 작업 · Notion에서 회의록 작성</span>
+      </div>
+      <div class="b-section">
+        <strong>6. 오늘의 제안</strong>
+        <span>Q1 보고서 검토 메일 답장이 시급합니다 (30시간 경과). 14시 프로젝트 리뷰 전 자료 준비를 추천합니다.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 5. API Endpoints -->
+<section id="api">
+  <div class="container">
+    <div class="section-tag">05 / API Endpoints</div>
+    <h2 class="section-title">전체 API 목록 (26개)</h2>
+
+    <table class="api-table">
+      <tr><th>Method</th><th>Path</th><th>Description</th></tr>
+      <tr><td><span class="method get">GET</span></td><td class="api-path">/health</td><td>서버 상태 + PC 연결 여부</td></tr>
+      <tr><td><span class="method get">GET</span></td><td class="api-path">/</td><td>루트 (i18n 환영 메시지)</td></tr>
+      <tr><td><span class="method ws">WS</span></td><td class="api-path">/ws/pc-client</td><td>PC 클라이언트 양방향 통신</td></tr>
+      <tr><td colspan="3" style="background:var(--bg3);font-weight:600;font-size:.8rem;color:var(--accent)">Command</td></tr>
+      <tr><td><span class="method post">POST</span></td><td class="api-path">/api/v1/command</td><td>자연어 명령 → 오케스트레이터 라우팅</td></tr>
+      <tr><td colspan="3" style="background:var(--bg3);font-weight:600;font-size:.8rem;color:var(--accent)">Data Push (Mobile + PC → Server)</td></tr>
+      <tr><td><span class="method post">POST</span></td><td class="api-path">/api/v1/push/activity</td><td>모바일 앱 사용 + 위치 + 통화</td></tr>
+      <tr><td><span class="method post">POST</span></td><td class="api-path">/api/v1/push/pc-activity</td><td>PC 윈도우 활동</td></tr>
+      <tr><td><span class="method post">POST</span></td><td class="api-path">/api/v1/push/screen-text</td><td>화면 텍스트 추출 데이터</td></tr>
+      <tr><td><span class="method post">POST</span></td><td class="api-path">/api/v1/push/tasks</td><td>할 일 생성</td></tr>
+      <tr><td><span class="method put">PUT</span></td><td class="api-path">/api/v1/push/tasks/{id}</td><td>할 일 수정</td></tr>
+      <tr><td><span class="method delete">DEL</span></td><td class="api-path">/api/v1/push/tasks/{id}</td><td>할 일 삭제</td></tr>
+      <tr><td colspan="3" style="background:var(--bg3);font-weight:600;font-size:.8rem;color:var(--accent)">Upload</td></tr>
+      <tr><td><span class="method post">POST</span></td><td class="api-path">/api/v1/upload/audio</td><td>녹음 → 전처리 → STT → 약속 추출</td></tr>
+      <tr><td colspan="3" style="background:var(--bg3);font-weight:600;font-size:.8rem;color:var(--accent)">Data Query</td></tr>
+      <tr><td><span class="method get">GET</span></td><td class="api-path">/api/v1/data/activity/summary</td><td>일일 활동 요약 (모바일+PC)</td></tr>
+      <tr><td><span class="method get">GET</span></td><td class="api-path">/api/v1/data/activity/trend</td><td>N일 트렌드</td></tr>
+      <tr><td><span class="method get">GET</span></td><td class="api-path">/api/v1/data/emails/unreplied</td><td>미답장 이메일</td></tr>
+      <tr><td><span class="method get">GET</span></td><td class="api-path">/api/v1/data/events/upcoming</td><td>다가오는 일정</td></tr>
+      <tr><td><span class="method get">GET</span></td><td class="api-path">/api/v1/data/promises</td><td>약속 목록</td></tr>
+      <tr><td><span class="method get">GET</span></td><td class="api-path">/api/v1/data/promises/summary</td><td>약속 이행 현황 요약</td></tr>
+      <tr><td><span class="method get">GET</span></td><td class="api-path">/api/v1/data/tasks</td><td>할 일 목록</td></tr>
+      <tr><td><span class="method get">GET</span></td><td class="api-path">/api/v1/data/transcripts</td><td>녹음 전사 목록</td></tr>
+      <tr><td><span class="method get">GET</span></td><td class="api-path">/api/v1/data/screen-texts</td><td>화면 텍스트 추출 기록</td></tr>
+      <tr><td><span class="method get">GET</span></td><td class="api-path">/api/v1/data/notifications</td><td>프로액티브 알림 기록</td></tr>
+      <tr><td><span class="method get">GET</span></td><td class="api-path">/api/v1/data/productivity/score</td><td>일일 생산성 점수</td></tr>
+      <tr><td><span class="method get">GET</span></td><td class="api-path">/api/v1/data/trends/weekly</td><td>주간 트렌드 분석</td></tr>
+      <tr><td colspan="3" style="background:var(--bg3);font-weight:600;font-size:.8rem;color:var(--accent)">Generation</td></tr>
+      <tr><td><span class="method post">POST</span></td><td class="api-path">/api/v1/data/briefing</td><td>아침/저녁 브리핑 생성</td></tr>
+      <tr><td><span class="method post">POST</span></td><td class="api-path">/api/v1/data/report/weekly</td><td>주간 리포트 생성</td></tr>
+      <tr><td><span class="method post">POST</span></td><td class="api-path">/api/v1/data/proactive/check</td><td>프로액티브 체크 수동 트리거</td></tr>
+      <tr><td><span class="method post">POST</span></td><td class="api-path">/api/v1/data/drive/save</td><td>Google Drive에 문서 저장</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- 6. Development Status -->
+<section id="status">
+  <div class="container">
+    <div class="section-tag">06 / Development Status</div>
+    <h2 class="section-title">개발 현황</h2>
+
+    <div class="status-grid">
+      <div class="status-card"><div class="s-num">90</div><div class="s-label">Python 파일</div></div>
+      <div class="status-card"><div class="s-num">73</div><div class="s-label">테스트 통과</div></div>
+      <div class="status-card"><div class="s-num">13</div><div class="s-label">DB 테이블</div></div>
+      <div class="status-card"><div class="s-num">6</div><div class="s-label">AI 에이전트</div></div>
+      <div class="status-card"><div class="s-num">26</div><div class="s-label">API 엔드포인트</div></div>
+      <div class="status-card"><div class="s-num">4</div><div class="s-label">Phase 완료</div></div>
+    </div>
+
+    <h3 style="margin:2rem 0 1rem;font-size:1.1rem">실동작 vs Mock 현황</h3>
+    <table class="status-table">
+      <tr><td>Claude Sonnet (대화/브리핑/리포트)</td><td><span class="badge live">LIVE</span> Anthropic API 연동 완료</td></tr>
+      <tr><td>Claude Haiku (약속 추출/화면 요약)</td><td><span class="badge live">LIVE</span> Anthropic API 연동 완료</td></tr>
+      <tr><td>PC 윈도우 추적 (5초 간격)</td><td><span class="badge live">LIVE</span> ctypes GetForegroundWindow</td></tr>
+      <tr><td>화면 텍스트 추출 (UIAutomation)</td><td><span class="badge live">LIVE</span> uiautomation 패키지</td></tr>
+      <tr><td>브라우저 탭 분류 (8 카테고리)</td><td><span class="badge live">LIVE</span> 윈도우 타이틀 파싱</td></tr>
+      <tr><td>프로액티브 알림 (30분 간격)</td><td><span class="badge live">LIVE</span> asyncio 백그라운드</td></tr>
+      <tr><td>생산성 점수 + 트렌드</td><td><span class="badge live">LIVE</span> 4-컴포넌트 계산</td></tr>
+      <tr><td>음성 웨이크워드 ("자비스")</td><td><span class="badge live">LIVE</span> Picovoice + sounddevice</td></tr>
+      <tr><td>TTS 음성 응답</td><td><span class="badge live">LIVE</span> edge-tts (무료)</td></tr>
+      <tr><td>WebSocket PC↔Server</td><td><span class="badge live">LIVE</span> FastAPI WebSocket</td></tr>
+      <tr><td>STT 음성 인식</td><td><span class="badge mock">MOCK</span> Deepgram 키 미설정</td></tr>
+      <tr><td>Gmail 크롤링</td><td><span class="badge mock">MOCK</span> Google OAuth 연동 대기</td></tr>
+      <tr><td>Calendar 동기화</td><td><span class="badge mock">MOCK</span> Google OAuth 연동 대기</td></tr>
+      <tr><td>Google Drive 저장</td><td><span class="badge mock">MOCK</span> Google OAuth 연동 대기</td></tr>
+      <tr><td>모바일 앱 사용 시간</td><td><span class="badge planned">PLANNED</span> Flutter 앱 (Phase 4)</td></tr>
+      <tr><td>통화 기록/위치/알림</td><td><span class="badge planned">PLANNED</span> Flutter 앱 (Phase 4)</td></tr>
+    </table>
+
+    <h3 style="margin:2rem 0 1rem;font-size:1.1rem">AI 에이전트 목록</h3>
+    <table class="status-table">
+      <tr><td>ChatAgent</td><td>Claude Sonnet 자유 대화</td></tr>
+      <tr><td>BriefingAgent</td><td>8개 소스 종합 아침/저녁 브리핑</td></tr>
+      <tr><td>TaskAgent</td><td>Claude tool-use TODO CRUD</td></tr>
+      <tr><td>ProactiveAgent</td><td>4종 자동 알림 + cooldown</td></tr>
+      <tr><td>ReportAgent</td><td>주간/월간 리포트 생성</td></tr>
+      <tr><td>ClaudeCodeAgent</td><td>WebSocket → PC CLI 실행</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- 7. Roadmap + Pricing -->
+<section>
+  <div class="container">
+    <div class="section-tag">07 / Roadmap & Business</div>
+    <h2 class="section-title">타임라인 + 수익 모델</h2>
+
+    <div class="timeline">
+      <div class="tl-item done">
+        <div class="tl-date">2026.03.14 — 완료</div>
+        <h4>Phase 0: 프로젝트 스켈레톤</h4>
+        <p>FastAPI 서버, DB 스키마, healthcheck, i18n</p>
+      </div>
+      <div class="tl-item done">
+        <div class="tl-date">2026.03.14 — 완료</div>
+        <h4>Phase 1: 핵심 엔진</h4>
+        <p>CRUD, 크롤러, 브리핑, 오케스트레이터, STT/TTS, API routes</p>
+      </div>
+      <div class="tl-item done">
+        <div class="tl-date">2026.03.14 — 완료</div>
+        <h4>Phase 2: 프로액티브 + PC Client</h4>
+        <p>프로액티브 알림, PC 크롤링, 음성 비서, Claude Code, WebSocket</p>
+      </div>
+      <div class="tl-item done">
+        <div class="tl-date">2026.03.14 — 완료</div>
+        <h4>Phase 3: 분석 + 리포트</h4>
+        <p>약속 추출, 생산성 점수, 트렌드, 주간 리포트, Drive 저장, 화면 텍스트</p>
+      </div>
+      <div class="tl-item current">
+        <div class="tl-date">Phase 4 — 예정</div>
+        <h4>Flutter 모바일 앱</h4>
+        <p>Android 우선 → iOS. 앱 사용 시간, 알림, 통화, 위치, 음성</p>
+      </div>
+      <div class="tl-item">
+        <div class="tl-date">Phase 5 — 예정</div>
+        <h4>고급 기능</h4>
+        <p>RAG (문서 검색), 메일 발송, 일정 등록 (쓰기 기능), 다국어</p>
+      </div>
+    </div>
+
+    <h3 style="margin:3rem 0 1rem;font-size:1.1rem">수익 모델</h3>
+    <div class="pricing-grid">
+      <div class="price-card">
+        <div class="price-name">Free</div>
+        <div class="price-amount">₩0 <span>/ 월</span></div>
+        <ul class="price-features">
+          <li>PC 크롤링 (윈도우 추적)</li>
+          <li>일일 브리핑 1회</li>
+          <li>기본 음성 명령</li>
+          <li>할 일 관리</li>
+          <li>하루 Claude 호출 50회</li>
+        </ul>
+      </div>
+      <div class="price-card pro">
+        <div class="price-name">Pro</div>
+        <div class="price-amount">₩9,900 <span>/ 월</span></div>
+        <ul class="price-features">
+          <li>Free 전체 포함</li>
+          <li>화면 텍스트 추출 (UIAutomation)</li>
+          <li>프로액티브 알림 (무제한)</li>
+          <li>약속 추출 + 이행 추적</li>
+          <li>생산성 점수 + 주간 리포트</li>
+          <li>Google Drive 자동 저장</li>
+          <li>Claude Code 원격 실행</li>
+          <li>Claude 호출 무제한</li>
+          <li>모바일 앱 연동</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3 style="margin:3rem 0 1rem;font-size:1.1rem">출시 순서</h3>
+    <table class="status-table">
+      <tr><td>1단계</td><td>PC Client (Windows) — <span class="badge live">현재 동작 중</span></td></tr>
+      <tr><td>2단계</td><td>Android 앱 (Flutter) — <span class="badge planned">Phase 4</span></td></tr>
+      <tr><td>3단계</td><td>iOS 앱 (Flutter) — <span class="badge planned">Phase 5+</span></td></tr>
+      <tr><td>4단계</td><td>macOS / Linux PC Client — <span class="badge planned">Future</span></td></tr>
+    </table>
+  </div>
+</section>
+
+<footer style="padding:4rem 0;text-align:center;border-top:1px solid var(--border)">
+  <div class="container">
+    <p style="font-family:'JetBrains Mono',monospace;font-size:.8rem;color:var(--text3)">
+      J.A.R.V.I.S — Built with Claude Opus 4.6 · Phase 0–3 in one day · 73 tests passing
+    </p>
+  </div>
+</footer>
+
+<script>
+// Nav show on scroll
+const nav=document.getElementById('nav');
+let lastY=0;
+window.addEventListener('scroll',()=>{
+  nav.classList.toggle('visible',window.scrollY>400);
+  lastY=window.scrollY;
+});
+
+// Reveal on scroll
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');obs.unobserve(e.target)}});
+},{threshold:0.1});
+document.querySelectorAll('section > .container').forEach(el=>{ el.classList.add('reveal'); obs.observe(el); });
+</script>
+</body>
+</html>

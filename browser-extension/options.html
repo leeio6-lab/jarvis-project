@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>J.A.R.V.I.S Screen Reader — Settings</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',sans-serif;background:#1a1a2e;color:#e0e0ee;padding:2rem;max-width:500px}
+h1{font-size:1.3rem;margin-bottom:.5rem;color:#00d4ff}
+p.sub{font-size:.85rem;color:#9090aa;margin-bottom:2rem}
+label{display:block;font-size:.9rem;margin-bottom:.5rem;font-weight:600}
+textarea{width:100%;height:120px;background:#12121a;border:1px solid#2a2a40;border-radius:8px;color:#e0e0ee;padding:.8rem;font-size:.85rem;font-family:'Consolas',monospace;resize:vertical}
+textarea:focus{outline:none;border-color:#00d4ff}
+.help{font-size:.75rem;color:#606078;margin-top:.3rem;margin-bottom:1.5rem}
+button{background:#00d4ff;color:#0a0a0f;border:none;padding:.6rem 1.5rem;border-radius:6px;font-weight:600;cursor:pointer;font-size:.9rem}
+button:hover{background:#00b8e0}
+.saved{color:#00e88f;font-size:.85rem;margin-left:1rem;opacity:0;transition:opacity .3s}
+.saved.show{opacity:1}
+.info{margin-top:2rem;padding:1rem;background:#12121a;border:1px solid#2a2a40;border-radius:8px;font-size:.8rem;color:#9090aa;line-height:1.6}
+</style>
+</head>
+<body>
+
+<h1>J.A.R.V.I.S Screen Reader</h1>
+<p class="sub">브라우저 페이지 텍스트를 자비스 서버로 전송합니다.</p>
+
+<label>제외할 도메인 (한 줄에 하나)</label>
+<textarea id="domains" placeholder="example.com&#10;secret-site.org"></textarea>
+<div class="help">이 도메인의 페이지에서는 텍스트를 추출하지 않습니다. 은행/결제 사이트는 기본 제외됩니다.</div>
+
+<button id="save">저장</button>
+<span class="saved" id="msg">저장되었습니다</span>
+
+<div class="info">
+  <strong>기본 제외 목록:</strong><br>
+  은행 (KB, 신한, 우리, 하나, IBK), 결제 (Toss, 카카오페이, 네이버페이, PayPal),
+  인증 (Google accounts, Microsoft login, Auth0), 비밀번호 관리자 (1Password, LastPass, Bitwarden)
+</div>
+
+<script>
+const ta = document.getElementById("domains");
+const msg = document.getElementById("msg");
+
+chrome.storage.sync.get({ excludeDomains: [] }, (data) => {
+  ta.value = (data.excludeDomains || []).join("\n");
+});
+
+document.getElementById("save").addEventListener("click", () => {
+  const domains = ta.value.split("\n").map(d => d.trim()).filter(Boolean);
+  chrome.storage.sync.set({ excludeDomains: domains }, () => {
+    msg.classList.add("show");
+    setTimeout(() => msg.classList.remove("show"), 2000);
+  });
+});
+</script>
+</body>
+</html>

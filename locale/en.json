@@ -1,0 +1,10 @@
+{
+  "app.welcome": "Hello, I'm J.A.R.V.I.S. How can I help you?",
+  "app.health_ok": "System operational",
+  "app.startup": "Starting J.A.R.V.I.S server",
+  "app.shutdown": "Shutting down J.A.R.V.I.S server",
+  "error.not_found": "Resource not found",
+  "error.unauthorized": "Authentication required",
+  "error.internal": "Internal server error",
+  "error.validation": "Invalid input data"
+}

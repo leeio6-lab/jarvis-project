@@ -1,0 +1,10 @@
+{
+  "app.welcome": "안녕하세요, J.A.R.V.I.S입니다. 무엇을 도와드릴까요?",
+  "app.health_ok": "시스템 정상 작동 중",
+  "app.startup": "J.A.R.V.I.S 서버를 시작합니다",
+  "app.shutdown": "J.A.R.V.I.S 서버를 종료합니다",
+  "error.not_found": "요청하신 리소스를 찾을 수 없습니다",
+  "error.unauthorized": "인증이 필요합니다",
+  "error.internal": "내부 서버 오류가 발생했습니다",
+  "error.validation": "입력 데이터가 올바르지 않습니다"
+}

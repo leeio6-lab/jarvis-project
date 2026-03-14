@@ -1,0 +1,51 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Environment / Secrets
+.env
+*.env.local
+config.json
+*.ppn
+
+# Database
+*.db
+*.sqlite3
+
+# Picovoice model
+*.pv
+
+# Test/temp
+.pytest_cache/
+*.bat
+
+# Logs
+*.log
+logs/
+
+# Audio temp
+*.wav
+*.mp3
+recordings/
