@@ -138,7 +138,10 @@ async def handle_message(
 
     tool_calls = extract_tool_calls(response)
     if not tool_calls:
-        return extract_text(response)
+        # Fallback: LLM sometimes generates tool calls as plain text
+        text = extract_text(response)
+        result = await _try_text_fallback(text, user_input, context, messages)
+        return result if result else text
 
     # Execute tool calls
     tool_results = []
@@ -154,7 +157,63 @@ async def handle_message(
     messages.append({"role": "assistant", "content": response["content"]})
     messages.append({"role": "user", "content": tool_results})
     final = await call_llm(messages, tier="medium", system=ORCHESTRATOR_SYSTEM)
-    return extract_text(final)
+    final_text = extract_text(final)
+
+    # If the final response still contains raw tool text, clean it up
+    if "route_to_agent" in final_text:
+        # The tool result IS the response — return it directly
+        for tr in tool_results:
+            content = tr.get("content", "")
+            if content and len(content) > 5 and "route_to_agent" not in content:
+                return content
+    return final_text
+
+
+async def _try_text_fallback(
+    text: str,
+    user_input: str,
+    context: dict[str, Any],
+    messages: list,
+) -> str | None:
+    """Handle cases where LLM outputs tool calls as plain text instead of tool_use."""
+    import re
+
+    # Check for route_to_agent pattern (various quote styles)
+    if "route_to_agent" in text:
+        match = re.search(r'agent["\s:=]+(\w+)', text)
+        logger.info("Fallback: route_to_agent detected, match=%s, text=%s", match, text[:80])
+        if match:
+            agent_type = match.group(1)
+            agent = get_agent(agent_type)
+            if agent:
+                result = await agent.run(user_input, context)
+                # If the agent returns JSON-like text, extract the message
+                if isinstance(result, str) and result.startswith("{"):
+                    try:
+                        parsed = json.loads(result)
+                        if "content" in parsed:
+                            return parsed["content"]
+                        if "parameters" in parsed and "content" in parsed["parameters"]:
+                            return parsed["parameters"]["content"]
+                    except (json.JSONDecodeError, KeyError):
+                        pass
+                return result
+        return None
+
+    # Check for other tool patterns in text
+    for tool_name in ["get_screen_texts", "get_activity_summary", "get_productivity_score",
+                      "get_unreplied_emails", "get_upcoming_events", "get_promises"]:
+        if tool_name in text:
+            result = await _execute_tool(tool_name, {}, context)
+            content = result if isinstance(result, str) else json.dumps(result, ensure_ascii=False)
+            messages.append({"role": "assistant", "content": text})
+            messages.append({"role": "user", "content": [
+                {"type": "tool_result", "tool_use_id": "fallback", "content": content}
+            ]})
+            final = await call_llm(messages, tier="medium", system=ORCHESTRATOR_SYSTEM)
+            return extract_text(final)
+
+    return None
 
 
 async def _execute_tool(
