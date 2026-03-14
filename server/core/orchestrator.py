@@ -197,16 +197,33 @@ async def _execute_tool(
     elif tool_name == "get_screen_texts":
         query = tool_input.get("query")
         since = tool_input.get("since")
-        limit = tool_input.get("limit", 30)
+        limit = tool_input.get("limit", 50)
+        # Always fetch recent data (ignore since if it would return 0 results)
         texts = await crud.get_screen_texts(db, since=since, limit=limit)
+        if not texts and since:
+            # Fallback: fetch without date filter
+            texts = await crud.get_screen_texts(db, limit=limit)
         if query:
             q_lower = query.lower()
-            texts = [
+            filtered = [
                 t for t in texts
                 if q_lower in (t.get("extracted_text") or "").lower()
                 or q_lower in (t.get("window_title") or "").lower()
+                or q_lower in (t.get("app_name") or "").lower()
             ]
-        return {"screen_texts": texts, "count": len(texts)}
+            if filtered:
+                texts = filtered
+            # If no keyword match, return all texts (let LLM interpret)
+        # Compact: only send essential fields to reduce token usage
+        compact = []
+        for t in texts[:20]:
+            compact.append({
+                "app": t.get("app_name", ""),
+                "title": (t.get("window_title") or "")[:60],
+                "text": (t.get("extracted_text") or "")[:300],
+                "time": (t.get("timestamp") or "")[:16],
+            })
+        return {"screen_texts": compact, "count": len(compact)}
 
     elif tool_name == "get_productivity_score":
         from server.analytics.productivity_score import calculate_daily_score
