@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import logging
+
 from fastapi import APIRouter
+from fastapi.responses import JSONResponse
 
 from server.api.schemas import (
     PcActivityRecord,
@@ -21,49 +24,65 @@ from server.crawlers.mobile_activity import (
 from server.database import crud
 from server.database.db import get_db
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter(prefix="/api/v1/push", tags=["push"])
 
 
 @router.post("/activity", response_model=PushResponse)
 async def push_mobile_activity(req: PushActivityRequest):
     """Receive mobile activity data from companion app."""
-    db = get_db()
-    counts = {}
+    try:
+        db = get_db()
+        counts = {}
 
-    if req.app_usage:
-        counts["app_usage"] = await ingest_app_usage_batch(
-            db, [r.model_dump() for r in req.app_usage]
-        )
-    if req.call_logs:
-        counts["call_logs"] = await ingest_call_logs(
-            db, [r.model_dump() for r in req.call_logs]
-        )
-    if req.locations:
-        counts["locations"] = await ingest_location_batch(
-            db, [r.model_dump() for r in req.locations]
-        )
+        if req.app_usage:
+            counts["app_usage"] = await ingest_app_usage_batch(
+                db, [r.model_dump() for r in req.app_usage]
+            )
+        if req.call_logs:
+            counts["call_logs"] = await ingest_call_logs(
+                db, [r.model_dump() for r in req.call_logs]
+            )
+        if req.locations:
+            counts["locations"] = await ingest_location_batch(
+                db, [r.model_dump() for r in req.locations]
+            )
 
-    return PushResponse(ingested=counts)
+        return PushResponse(ingested=counts)
+    except Exception as e:
+        logger.exception("Failed to ingest mobile activity data")
+        return JSONResponse(
+            status_code=500,
+            content={"detail": f"Failed to ingest activity data: {str(e)}"},
+        )
 
 
 @router.post("/pc-activity", response_model=PushResponse)
 async def push_pc_activity(req: PushPcActivityRequest):
     """Receive PC activity data from pc-client."""
-    db = get_db()
-    count = 0
-    for r in req.activities:
-        await crud.insert_pc_activity(
-            db,
-            window_title=r.window_title,
-            process_name=r.process_name,
-            url=r.url,
-            started_at=r.started_at,
-            ended_at=r.ended_at,
-            duration_s=r.duration_s,
-            idle=r.idle,
+    try:
+        db = get_db()
+        count = 0
+        for r in req.activities:
+            await crud.insert_pc_activity(
+                db,
+                window_title=r.window_title,
+                process_name=r.process_name,
+                url=r.url,
+                started_at=r.started_at,
+                ended_at=r.ended_at,
+                duration_s=r.duration_s,
+                idle=r.idle,
+            )
+            count += 1
+        return PushResponse(ingested={"pc_activity": count})
+    except Exception as e:
+        logger.exception("Failed to ingest PC activity data")
+        return JSONResponse(
+            status_code=500,
+            content={"detail": f"Failed to ingest PC activity data: {str(e)}"},
         )
-        count += 1
-    return PushResponse(ingested={"pc_activity": count})
 
 
 @router.post("/tasks")

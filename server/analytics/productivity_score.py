@@ -168,6 +168,23 @@ async def calculate_daily_score(
     done_promises = await crud.get_promises(db, status="done")
     overdue_promises = await crud.get_promises(db, status="overdue")
 
+    # Pre-classify all unique app names to avoid repeated LLM calls per record.
+    unique_apps: set[str] = set()
+    for r in pc_records:
+        if not r.get("idle"):
+            name = r.get("process_name", "")
+            if name:
+                unique_apps.add(name)
+    for r in mobile_records:
+        name = r.get("package") or r.get("app_name", "")
+        if name:
+            unique_apps.add(name)
+
+    # Classify each unique app once (hits cache/DB/LLM as needed).
+    app_cat_map: dict[str, str] = {}
+    for app in unique_apps:
+        app_cat_map[app] = await classify_app(db, app)
+
     # === Component 1: Focus Ratio (40%) ===
     work_seconds = 0
     leisure_seconds = 0
@@ -178,7 +195,7 @@ async def calculate_daily_score(
         if r.get("idle"):
             continue
         total_seconds += dur
-        cat = await classify_app(db, r.get("process_name", ""))
+        cat = app_cat_map.get(r.get("process_name", ""), "neutral")
         if cat == "work":
             work_seconds += dur
         elif cat == "leisure":
@@ -187,7 +204,7 @@ async def calculate_daily_score(
     for r in mobile_records:
         dur = r.get("duration_s") or 0
         total_seconds += dur
-        cat = await classify_app(db, r.get("package") or r.get("app_name", ""))
+        cat = app_cat_map.get(r.get("package") or r.get("app_name", ""), "neutral")
         if cat == "work":
             work_seconds += dur
         elif cat == "leisure":
@@ -201,7 +218,7 @@ async def calculate_daily_score(
     for r in pc_records:
         dur = r.get("duration_s") or 0
         if not r.get("idle") and dur >= DEEP_WORK_MIN_SECONDS:
-            cat = await classify_app(db, r.get("process_name", ""))
+            cat = app_cat_map.get(r.get("process_name", ""), "neutral")
             if cat == "work":
                 deep_blocks += 1
 

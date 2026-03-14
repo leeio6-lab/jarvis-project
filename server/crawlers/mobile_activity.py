@@ -56,14 +56,17 @@ async def ingest_call_logs(
     count = 0
     for r in records:
         text = r.get("transcript", f"Call {r.get('direction', 'unknown')} - {r.get('phone_number', 'unknown')}")
-        await crud.insert_transcript(
-            db,
-            source="call",
-            text=text,
-            duration_s=r.get("duration_s"),
-            recorded_at=r["started_at"],
-        )
-        count += 1
+        try:
+            await crud.insert_transcript(
+                db,
+                source="call",
+                text=text,
+                duration_s=r.get("duration_s"),
+                recorded_at=r.get("started_at", ""),
+            )
+            count += 1
+        except Exception:
+            logger.exception("Failed to ingest call log: %s", r)
     logger.info("Ingested %d call log records", count)
     return count
 

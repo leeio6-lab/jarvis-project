@@ -27,12 +27,17 @@ async def db():
 @pytest.fixture
 def client():
     """API test client with in-memory DB (lifespan-managed)."""
+    import unittest.mock as mock
+    import server.main as main_module
+
     original_init = db_module.init_db
 
     async def _init_memory(path: str = "jarvis.db"):
         return await original_init(":memory:")
 
+    # Patch both the module attribute AND the name imported in main.py
     db_module.init_db = _init_memory
-    with TestClient(app) as c:
-        yield c
+    with mock.patch.object(main_module, "init_db", _init_memory):
+        with TestClient(app) as c:
+            yield c
     db_module.init_db = original_init

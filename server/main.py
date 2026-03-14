@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Query, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 
 from server.agents.claude_code import clear_pc_connection, handle_pc_response, set_pc_connection
 from server.api.routes_command import router as command_router
@@ -14,7 +15,9 @@ from server.api.routes_push import router as push_router
 from server.api.routes_upload import router as upload_router
 from server.config.logging_config import setup_logging
 from server.config.settings import settings
-from server.database.db import close_db, init_db
+from server.core.auth import build_google_auth_url, exchange_google_code
+from server.database import crud
+from server.database.db import close_db, get_db, init_db
 from server.scheduler.proactive_check import start_proactive_scheduler, stop_proactive_scheduler
 from server.scheduler.weekly_report import start_weekly_scheduler, stop_weekly_scheduler
 from server.utils.i18n import t
@@ -101,6 +104,28 @@ async def pc_client_websocket(websocket: WebSocket):
         logger.info("PC client disconnected")
     finally:
         clear_pc_connection()
+
+
+@app.get("/auth/google/login")
+async def google_login():
+    """Redirect to Google OAuth2 authorization page."""
+    url = build_google_auth_url()
+    if not url:
+        return {"error": "Google OAuth is not configured. Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET."}
+    return RedirectResponse(url=url)
+
+
+@app.get("/auth/google/callback")
+async def google_callback(code: str = Query(...)):
+    """Exchange Google authorization code for tokens and store in user_state."""
+    try:
+        tokens = await exchange_google_code(code)
+        db = get_db()
+        await crud.upsert_user_state(db, google_token=json.dumps(tokens))
+        return {"status": "ok", "message": "Google 계정이 연결되었습니다."}
+    except Exception as e:
+        logger.warning("Google OAuth callback failed: %s", e)
+        return {"status": "error", "message": f"Google 인증에 실패했습니다: {str(e)}"}
 
 
 if __name__ == "__main__":
