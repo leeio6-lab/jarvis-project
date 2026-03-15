@@ -279,34 +279,36 @@ def _generate_insights(
     score: float, focus_ratio: float, deep_blocks: int,
     tasks_done: int, work_s: int, leisure_s: int, total_s: int,
 ) -> list[str]:
-    """Generate positive, non-judgmental insights."""
+    """Generate secretary-style insights — not generic, actionable."""
     insights = []
+    from server.analytics.activity_analyzer import format_duration
 
     if total_s == 0:
-        insights.append("오늘 아직 기록된 활동이 없습니다.")
+        insights.append("기록된 활동이 없습니다. pc-client를 실행하시면 자동 추적됩니다.")
         return insights
 
+    # Work/leisure balance
+    work_h = format_duration(work_s)
+    leisure_h = format_duration(leisure_s)
     if focus_ratio >= 0.7:
-        insights.append("오늘 집중도가 매우 높았습니다.")
-    elif focus_ratio >= 0.5:
-        insights.append("업무와 휴식의 밸런스가 적절했습니다.")
-    elif total_s > 0:
-        insights.append("오늘은 여유로운 하루였습니다.")
+        insights.append(f"업무 집중도 {focus_ratio*100:.0f}% — 업무 {work_h} 중 비업무 {leisure_h}로 집중도가 높았습니다.")
+    elif focus_ratio >= 0.4:
+        insights.append(f"업무 {work_h}, 비업무 {leisure_h} — 적당한 밸런스입니다.")
+    else:
+        insights.append(f"업무 {work_h}, 비업무 {leisure_h} — 비업무 비중이 높은 편입니다.")
 
-    if deep_blocks >= 4:
-        insights.append(f"딥 워크 {deep_blocks}회 달성 - 몰입 능력이 뛰어납니다.")
-    elif deep_blocks >= 2:
-        insights.append(f"25분 이상 집중한 시간이 {deep_blocks}번 있었습니다.")
+    # Deep work
+    if deep_blocks >= 3:
+        insights.append(f"25분+ 집중 세션 {deep_blocks}회 — 몰입 작업이 잘 되고 있습니다.")
     elif deep_blocks == 0 and work_s > 3600:
-        insights.append("짧은 작업 전환이 많았습니다. 타이머를 활용해보는 건 어떨까요?")
+        insights.append("25분 이상 연속 집중한 시간이 없었습니다. 짧은 작업 전환이 많았습니다.")
 
-    if tasks_done >= 5:
-        insights.append(f"할 일 {tasks_done}개 완료! 생산적인 하루입니다.")
+    # Tasks
+    if tasks_done >= 3:
+        insights.append(f"할 일 {tasks_done}건 완료 — 생산적인 하루입니다.")
     elif tasks_done > 0:
-        insights.append(f"할 일 {tasks_done}개를 완료했습니다.")
-
-    hours = total_s // 3600
-    if hours >= 10:
-        insights.append(f"오늘 {hours}시간 활동했습니다. 충분한 휴식도 중요합니다.")
+        insights.append(f"할 일 {tasks_done}건 완료.")
+    else:
+        insights.append("오늘 완료한 할 일이 없습니다.")
 
     return insights
