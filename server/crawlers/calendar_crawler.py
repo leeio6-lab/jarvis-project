@@ -110,8 +110,8 @@ async def sync_calendar(
         try:
             events = await _fetch_events_google(google_token, time_min, time_max)
         except Exception:
-            logger.exception("Calendar API fetch failed, using mock data")
-            events = _mock_events()
+            logger.exception("Calendar API fetch failed — skipping (no mock in connected mode)")
+            events = []
     else:
         logger.info("Google credentials not configured, using mock calendar data")
         events = _mock_events()

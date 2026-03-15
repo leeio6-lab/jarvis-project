@@ -96,8 +96,8 @@ async def sync_emails(
         try:
             emails = await _fetch_emails_google(google_token, max_results)
         except Exception:
-            logger.exception("Gmail API fetch failed, using mock data")
-            emails = _mock_emails()
+            logger.exception("Gmail API fetch failed — skipping (no mock in connected mode)")
+            emails = []
     else:
         logger.info("Google credentials not configured, using mock email data")
         emails = _mock_emails()
