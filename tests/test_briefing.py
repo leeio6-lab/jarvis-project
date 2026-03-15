@@ -1,6 +1,7 @@
 """Tests for briefing agent — verifies all data sources are gathered."""
 
 import pytest
+from datetime import datetime, timezone
 
 from server.agents.briefing import BriefingAgent, _gather_briefing_data, _build_context_message
 from server.database import crud
@@ -20,33 +21,36 @@ async def test_gather_briefing_data_empty_db(db):
 @pytest.mark.asyncio
 async def test_gather_briefing_data_with_all_sources(db):
     """Verify briefing gathers data from ALL sources — the key differentiator."""
+    # Use today's date so events fall within the query range
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
     # Seed ALL data sources
     await crud.insert_app_usage(
         db, device="mobile", package="com.kakao.talk",
-        app_name="KakaoTalk", started_at="2026-03-14T09:00:00", duration_s=1800,
+        app_name="KakaoTalk", started_at=f"{today}T09:00:00", duration_s=1800,
     )
     await crud.insert_pc_activity(
         db, window_title="VSCode", process_name="Code.exe",
-        started_at="2026-03-14T09:00:00", duration_s=7200,
+        started_at=f"{today}T09:00:00", duration_s=7200,
     )
     await crud.insert_transcript(
         db, source="mic", text="내일까지 보고서 제출하기로 했습니다",
-        summary="보고서 제출 약속", recorded_at="2026-03-14T10:00:00",
+        summary="보고서 제출 약속", recorded_at=f"{today}T10:00:00",
     )
     await crud.insert_promise(
-        db, content="보고서 제출", due_date="2026-03-15",
+        db, content="보고서 제출", due_date=today,
     )
     await crud.upsert_email(
         db, gmail_id="test_001", subject="긴급: 회의 안건",
-        sender="boss@co.com", received_at="2026-03-14T08:00:00", priority="high",
+        sender="boss@co.com", received_at=f"{today}T08:00:00", priority="high",
     )
     await crud.upsert_calendar_event(
         db, google_event_id="evt_001", title="팀 미팅",
-        start_time="2026-03-14T14:00:00", end_time="2026-03-14T15:00:00",
+        start_time=f"{today}T14:00:00", end_time=f"{today}T15:00:00",
     )
     await crud.insert_location(
         db, latitude=37.5665, longitude=126.978, label="사무실",
-        recorded_at="2026-03-14T09:00:00",
+        recorded_at=f"{today}T09:00:00",
     )
 
     data = await _gather_briefing_data(db, briefing_type="morning")

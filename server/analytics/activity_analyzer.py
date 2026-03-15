@@ -67,12 +67,30 @@ async def get_daily_summary(
     promises = await crud.get_promises(db, status="pending")
     events = await crud.get_upcoming_events(db, since=since, until=until)
 
+    # Include screen_texts summary for richer "what did I do" answers
+    screen_texts = await crud.get_screen_texts(db, since=since, limit=50)
+    visited_sites: list[dict[str, Any]] = []
+    seen = set()
+    for st in screen_texts:
+        app = st.get("app_name", "")
+        title = (st.get("window_title") or "")[:60]
+        key = f"{app}|{title}"
+        if key not in seen:
+            seen.add(key)
+            visited_sites.append({
+                "app": app,
+                "title": title,
+                "text_preview": (st.get("extracted_text") or "")[:150],
+                "time": (st.get("timestamp") or "")[:16],
+            })
+
     return {
         "date": date or since[:10],
         "total_active_s": mobile_total + pc_total,
         "mobile": {"total_s": mobile_total, "apps": mobile_apps[:10]},
         "pc": {"total_s": pc_total, "apps": pc_apps[:10]},
         "top_apps": all_apps[:10],
+        "visited_sites": visited_sites[:15],
         "unreplied_emails": len(unreplied),
         "pending_promises": len(promises),
         "upcoming_events": len(events),

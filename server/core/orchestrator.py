@@ -24,7 +24,8 @@ ORCHESTRATOR_SYSTEM = """당신은 J.A.R.V.I.S 오케스트레이터입니다.
 - 할 일 관리 ("할 일 추가", "TODO", "할 일 보여줘") → route_to_agent(agent="task")
 - 활동 조회 ("오늘 뭐 했어", "앱 사용 시간", "SAP 얼마나") → get_activity_summary
 - 미답장 메일 ("안 읽은 메일", "메일 알려줘") → get_unreplied_emails
-- 일정 ("오늘 일정", "내일 회의") → get_upcoming_events
+- 일정 조회 ("오늘 일정", "내일 회의") → get_upcoming_events
+- 일정 등록 ("회의 등록", "일정 추가해줘") → create_calendar_event
 - 약속 ("약속 현황") → get_promises
 - 화면에서 본 것 ("웍스에서 뭐 봤어", "XXX 메일 뭐야", "화면에서 본 거") → get_screen_texts
 - 생산성 ("생산성 어때", "생산성 점수", "얼마나 일했어") → get_productivity_score
@@ -54,7 +55,7 @@ ORCHESTRATOR_TOOLS = [
     },
     {
         "name": "get_activity_summary",
-        "description": "오늘 또는 특정 날짜의 모바일+PC 활동 요약을 조회합니다",
+        "description": "오늘 또는 특정 날짜의 모바일+PC 활동과 방문 사이트 요약을 조회합니다. '오늘 뭐했어?', '어제 뭐했어?' 등의 질문에 사용합니다. 앱 사용시간과 화면에서 캡처된 방문 사이트 목록을 모두 포함합니다.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -80,6 +81,20 @@ ORCHESTRATOR_TOOLS = [
             "properties": {
                 "days": {"type": "integer", "description": "며칠 후까지 조회할지"},
             },
+        },
+    },
+    {
+        "name": "create_calendar_event",
+        "description": "캘린더에 일정을 등록합니다. '회의 등록', '일정 추가' 등의 요청에 사용합니다.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "title": {"type": "string", "description": "일정 제목"},
+                "date": {"type": "string", "description": "날짜 (YYYY-MM-DD)"},
+                "time": {"type": "string", "description": "시간 (HH:MM)"},
+                "duration_minutes": {"type": "integer", "description": "소요 시간(분)"},
+            },
+            "required": ["title", "date", "time"],
         },
     },
     {
@@ -200,16 +215,20 @@ async def _try_text_fallback(
                 return result
         return None
 
-    # Check for other tool patterns in text
+    # Check for other tool patterns in text — execute and synthesize response
     for tool_name in ["get_screen_texts", "get_activity_summary", "get_productivity_score",
-                      "get_unreplied_emails", "get_upcoming_events", "get_promises"]:
+                      "get_unreplied_emails", "get_upcoming_events", "get_promises",
+                      "create_calendar_event"]:
         if tool_name in text:
             result = await _execute_tool(tool_name, {}, context)
             content = result if isinstance(result, str) else json.dumps(result, ensure_ascii=False)
-            messages.append({"role": "assistant", "content": text})
-            messages.append({"role": "user", "content": [
-                {"type": "tool_result", "tool_use_id": "fallback", "content": content}
-            ]})
+            # Instead of sending back as tool_result (which needs valid tool_use_id),
+            # send the data as a user message asking for a natural-language summary
+            messages.append({"role": "assistant", "content": f"도구 {tool_name}을(를) 호출하겠습니다."})
+            messages.append({
+                "role": "user",
+                "content": f"[시스템] 도구 결과입니다. 이 데이터를 바탕으로 사용자에게 자연스러운 한국어로 답변하세요:\n{content}",
+            })
             final = await call_llm(messages, tier="medium", system=ORCHESTRATOR_SYSTEM)
             return extract_text(final)
 
@@ -283,6 +302,18 @@ async def _execute_tool(
                 "time": (t.get("timestamp") or "")[:16],
             })
         return {"screen_texts": compact, "count": len(compact)}
+
+    elif tool_name == "create_calendar_event":
+        # Dry-run: save to DB tasks as a proxy, do NOT call Google Calendar API
+        title = tool_input.get("title", "새 일정")
+        date = tool_input.get("date", "")
+        time_str = tool_input.get("time", "")
+        duration = tool_input.get("duration_minutes", 60)
+        return {
+            "status": "dry_run",
+            "message": f"'{title}' 일정이 {date} {time_str}에 {duration}분간 등록 준비되었습니다. (Google Calendar 연동 전이라 dry-run 모드입니다)",
+            "event": {"title": title, "date": date, "time": time_str, "duration_minutes": duration},
+        }
 
     elif tool_name == "get_productivity_score":
         from server.analytics.productivity_score import calculate_daily_score
