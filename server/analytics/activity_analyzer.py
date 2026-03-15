@@ -68,6 +68,30 @@ async def get_daily_summary(
     events = await crud.get_upcoming_events(db, since=since, until=until)
 
     # Include screen_texts summary for richer "what did I do" answers
+    # Classify sites as work/leisure for sorting and reporting
+    _LEISURE_KEYWORDS = {
+        "유튜브", "youtube", "넷플릭스", "netflix", "쿠팡", "coupang",
+        "부동산", "land.naver", "당근", "번개장터", "인스타그램", "instagram",
+        "페이스북", "facebook", "트위터", "twitter", "틱톡", "tiktok",
+        "배달의민족", "요기요", "게임",
+    }
+    _WORK_KEYWORDS = {
+        "sap", "홈택스", "hometax", "dart", "공시", "법령", "law.go.kr",
+        "국세청", "한국은행", "ecos", "식약처", "nedrug", "세금", "세액",
+        "회계", "ifrs", "감사보고서", "excel", "vlookup", "calendar",
+        "검색", "google", "메일", "웍스", "worksmobile",
+    }
+
+    def _classify_site(app: str, title: str) -> str:
+        combined = f"{app} {title}".lower()
+        for kw in _LEISURE_KEYWORDS:
+            if kw in combined:
+                return "leisure"
+        for kw in _WORK_KEYWORDS:
+            if kw in combined:
+                return "work"
+        return "neutral"
+
     screen_texts = await crud.get_screen_texts(db, since=since, limit=50)
     visited_sites: list[dict[str, Any]] = []
     seen = set()
@@ -77,12 +101,18 @@ async def get_daily_summary(
         key = f"{app}|{title}"
         if key not in seen:
             seen.add(key)
+            category = _classify_site(app, title)
             visited_sites.append({
                 "app": app,
                 "title": title,
+                "category": category,
                 "text_preview": (st.get("extracted_text") or "")[:150],
                 "time": (st.get("timestamp") or "")[:16],
             })
+
+    # Sort: work first, then neutral, then leisure
+    _ORDER = {"work": 0, "neutral": 1, "leisure": 2}
+    visited_sites.sort(key=lambda x: _ORDER.get(x.get("category", "neutral"), 1))
 
     return {
         "date": date or since[:10],
