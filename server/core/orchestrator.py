@@ -13,31 +13,29 @@ from server.database.db import get_db
 
 logger = logging.getLogger(__name__)
 
-ORCHESTRATOR_SYSTEM = """당신은 J.A.R.V.I.S 오케스트레이터입니다.
-사용자의 의도를 파악하여 **반드시** 적절한 도구를 호출하세요.
+ORCHESTRATOR_SYSTEM = """당신은 윤정훈님의 전담 비서(오케스트레이터)입니다.
+사용자 질문을 분석해서 **필요한 도구를 전부** 호출하세요. 여러 개 동시 호출 가능.
 
-중요: 절대로 도구 없이 직접 답변하지 마세요. 어떤 질문이든 반드시 아래 도구 중 하나를 호출하세요.
+## 도구 선택 가이드
+- "내일 뭐 해야 해?" → get_upcoming_events + get_unreplied_emails + route_to_agent(task) 3개 동시
+- "오늘 뭐했어?" → get_activity_summary
+- "날씨 어때?", "주가?", "아까 본 거" → get_screen_texts(query=키워드)
+- "미답장 메일" → get_unreplied_emails
+- "일정" → get_upcoming_events
+- "회의 등록", "일정 추가" → create_calendar_event
+- "할 일 추가/완료/삭제" → route_to_agent(agent="task")
+- "브리핑" → route_to_agent(agent="briefing")
+- "생산성" → get_productivity_score
+- "XX 메일 뭐야?" → get_screen_texts(query=XX)
+- 전문 지식, 일반 대화 → route_to_agent(agent="chat")
 
-라우팅 규칙 (우선순위 순서):
-1. 화면 데이터 검색 → get_screen_texts (query 파라미터에 키워드)
-   - 사용자가 최근에 본 것: "날씨 어때?", "주가 얼마야?", "환율?", "뉴스 뭐 나와?"
-   - 과거 참조: "아까", "방금", "전에", "얼마였어"
-   - 특정 사이트/앱 질문: "웍스에서 뭐 봤어", "SAP에서 뭐 했어"
-   - 핵심: 사용자가 뭔가를 "본 적이 있을 수 있는" 질문이면 무조건 get_screen_texts
-2. 활동 조회 → get_activity_summary: "오늘 뭐 했어", "업무 외 활동", "비업무"
-3. 미답장 메일 → get_unreplied_emails: "메일", "미답장", "급한 거", "중요한 일"
-4. 일정 조회 → get_upcoming_events: "오늘 일정", "내일 회의"
-5. 일정 등록 → create_calendar_event: "회의 등록", "일정 추가"
-6. 할 일 → route_to_agent(agent="task"): "할 일 추가/보여줘/삭제"
-7. 브리핑 → route_to_agent(agent="briefing"): "브리핑", "요약"
-8. 생산성 → get_productivity_score: "생산성 점수"
-9. 약속 → get_promises: "약속 현황"
-10. 전문 지식/일반 대화 → route_to_agent(agent="chat"): 위에 해당 안 되는 것
-
-핵심 원칙: 사용자가 PC에서 무언가를 보면서 질문하는 상황을 항상 가정하세요.
-"날씨", "주가", "환율", "뉴스" 같은 키워드가 있으면 get_screen_texts(query=키워드)를 먼저 호출하세요.
-도구를 호출한 뒤 결과를 바탕으로 사용자에게 자연스럽게 답변하세요.
-한국어로 응답합니다."""
+## 핵심 원칙
+1. 복합 질문이면 도구 여러 개 호출. 하나만 호출하지 마.
+2. "아까", "방금", "전에" 등 과거 참조 → get_screen_texts
+3. 도구 결과를 종합해서 비서처럼 보고. "~입니다" 톤.
+4. 인사/응원 빼고 본론만. 이모지 없음.
+5. 도구 없이 직접 답변하지 마. 반드시 도구 호출.
+한국어로 응답."""
 
 ORCHESTRATOR_TOOLS = [
     {
@@ -140,33 +138,15 @@ ORCHESTRATOR_TOOLS = [
 
 # ── Fast-path patterns: skip orchestrator LLM, go directly to data+synthesis ──
 
+# Fast-path: 단순 1:1 조회만. 복합 질문은 오케스트레이터 LLM이 판단.
 _FAST_PATTERNS = {
+    # 확실한 단순 조회만 여기에. 애매한 건 LLM한테.
     "할 일 보여": "list_tasks",
     "할일 보여": "list_tasks",
     "할 일 목록": "list_tasks",
-    "투두 보여": "list_tasks",
-    "할 일 뭐": "list_tasks",
-    "할일 뭐": "list_tasks",
-    "뭐 남았어": "list_tasks",
     "미답장 메일": "unreplied_emails",
     "답장 안 한": "unreplied_emails",
-    "안 읽은 메일": "unreplied_emails",
-    "급한 메일": "unreplied_emails",
-    "오늘 일정": "upcoming_events",
-    "내일 일정": "upcoming_events",
-    "일정 알려": "upcoming_events",
-    "내일 뭐": "upcoming_events",
-    "생산성 점수": "productivity_score",
-    "생산성 어때": "productivity_score",
-    "오늘 뭐 했": "activity_summary",
-    "오늘 뭐했": "activity_summary",
-    "뭐 했어": "activity_summary",
-    "업무 외": "activity_summary",
-    "비업무": "activity_summary",
 }
-
-# Names/keywords that trigger screen_text search
-_SCREEN_SEARCH_TRIGGERS = ["메일 뭐", "메일 내용", "뭐야", "뭐 보냈"]
 
 
 async def _try_fast_path(user_input: str, context: dict) -> str | None:
@@ -181,11 +161,7 @@ async def _try_fast_path(user_input: str, context: dict) -> str | None:
             break
 
     if not matched_action:
-        # Check for name + "메일" pattern → screen_text search
-        if "메일" in lower and any(trigger.replace(" ", "") in lower for trigger in _SCREEN_SEARCH_TRIGGERS):
-            matched_action = "screen_search"
-        else:
-            return None
+        return None
 
     # Fetch data directly from DB
     data_str = ""
@@ -256,69 +232,6 @@ async def _try_fast_path(user_input: str, context: dict) -> str | None:
         if len(emails) > 10:
             data_str += f"\n외 {len(emails) - 10}건"
         data_str += "\n\n비서 지시: 각 메일에 대해 짧은 답장 초안(1~2줄)을 제안해주세요. '확인했습니다, 검토 후 회신드리겠습니다' 같은 수준."
-
-    elif matched_action == "screen_search":
-        # Extract search query from user input (remove common words)
-        import re
-        query = re.sub(r'(메일|뭐야|뭐|알려줘|보여줘|내용|\?)', '', user_input).strip()
-        if not query:
-            query = user_input
-        texts = await crud.get_screen_texts(db, limit=100)
-        q_lower = query.lower()
-        matches = [
-            t for t in texts
-            if q_lower in (t.get("extracted_text") or "").lower()
-            or q_lower in (t.get("window_title") or "").lower()
-            or q_lower in (t.get("app_name") or "").lower()
-        ]
-        if not matches:
-            return f"'{query}' 관련 화면 데이터를 찾지 못했습니다."
-        lines = []
-        for m in matches[:5]:
-            title = (m.get("window_title") or "")[:60]
-            text = (m.get("extracted_text") or "")[:300]
-            ts = (m.get("timestamp") or "")[:16]
-            lines.append(f"[{ts}] {title}\n{text}")
-        data_str = f"'{query}' 관련 화면 데이터 {len(matches)}건:\n\n" + "\n---\n".join(lines)
-
-    elif matched_action == "upcoming_events":
-        from datetime import datetime, timedelta, timezone
-        now = datetime.now(timezone.utc)
-        events = await crud.get_upcoming_events(
-            db, since=now.isoformat(), until=(now + timedelta(days=3)).isoformat()
-        )
-        if not events:
-            return "예정된 일정이 없습니다."
-        lines = []
-        for e in events:
-            lines.append(f"- {e.get('title', '?')} ({e.get('start_time', '?')[:16]} ~ {e.get('end_time', '?')[:16]})")
-            if e.get("location"):
-                lines[-1] += f" @ {e['location']}"
-        data_str = f"일정 {len(events)}건:\n" + "\n".join(lines)
-
-    elif matched_action == "productivity_score":
-        from server.analytics.productivity_score import calculate_daily_score
-        score = await calculate_daily_score(db)
-        data_str = json.dumps(score, ensure_ascii=False)
-
-    elif matched_action == "activity_summary":
-        from server.analytics.activity_analyzer import get_daily_summary
-        summary = await get_daily_summary(db)
-        # Explicitly separate work vs leisure sites for the LLM
-        visited = summary.get("visited_sites", [])
-        work_sites = [s for s in visited if s.get("category") == "work"]
-        leisure_sites = [s for s in visited if s.get("category") == "leisure"]
-        neutral_sites = [s for s in visited if s.get("category") not in ("work", "leisure")]
-        extra = ""
-        if work_sites:
-            extra += "\n\n[업무 사이트]\n" + "\n".join(f"- {s['app']}: {s['title']}" for s in work_sites[:10])
-        if leisure_sites:
-            extra += "\n\n[비업무 사이트 — 쇼핑/동영상/뉴스/부동산 등]\n" + "\n".join(f"- {s['app']}: {s['title']}" for s in leisure_sites[:10])
-        if neutral_sites:
-            extra += "\n\n[기타]\n" + "\n".join(f"- {s['app']}: {s['title']}" for s in neutral_sites[:5])
-        # Remove visited_sites from summary to save tokens, use the formatted version instead
-        summary.pop("visited_sites", None)
-        data_str = json.dumps(summary, ensure_ascii=False, default=str)[:1500] + extra
 
     if not data_str:
         return None
