@@ -30,6 +30,7 @@ async def call_llm(
     tools: list[dict[str, Any]] | None = None,
     model: str | None = None,
     max_tokens: int | None = None,
+    purpose: str = "",
 ) -> dict[str, Any]:
     """Call LLM with automatic provider routing.
 
@@ -38,14 +39,28 @@ async def call_llm(
 
     Returns normalized response: {content: [{type: "text", text: "..."}], ...}
     """
+    import time as _time
+    from server.utils.cost_tracker import tracker
+
     resolved_model = model or settings.get_model(tier)
+    start = _time.monotonic()
 
     if settings.is_openai_model(resolved_model):
-        return await _call_openai(messages, system=system, tools=tools,
-                                  model=resolved_model, max_tokens=max_tokens)
+        response = await _call_openai(messages, system=system, tools=tools,
+                                      model=resolved_model, max_tokens=max_tokens)
     else:
-        return await _call_anthropic(messages, system=system, tools=tools,
-                                     model=resolved_model, max_tokens=max_tokens)
+        response = await _call_anthropic(messages, system=system, tools=tools,
+                                         model=resolved_model, max_tokens=max_tokens)
+
+    latency_ms = int((_time.monotonic() - start) * 1000)
+    tracker.record(
+        model=resolved_model,
+        usage=response.get("usage"),
+        latency_ms=latency_ms,
+        purpose=purpose or tier,
+    )
+
+    return response
 
 
 # ── Backward-compatible alias ──────────────────────────────────────────

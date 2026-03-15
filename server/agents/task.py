@@ -129,7 +129,18 @@ class TaskAgent(BaseAgent):
 
         elif tool_name == "list_tasks":
             tasks = await crud.get_tasks(db, status=tool_input.get("status"))
-            return {"tasks": tasks, "count": len(tasks)}
+            # Compact format to help LLM list them all
+            compact = []
+            for t in tasks[:20]:
+                line = f"- {t.get('title', '?')}"
+                if t.get("due_date"):
+                    line += f" (마감: {t['due_date']})"
+                if t.get("priority") and t["priority"] != "normal":
+                    line += f" [{t['priority']}]"
+                if t.get("status") and t["status"] != "pending":
+                    line += f" ({t['status']})"
+                compact.append(line)
+            return {"task_list": "\n".join(compact), "count": len(tasks)}
 
         elif tool_name == "update_task":
             task_id = tool_input.pop("task_id")

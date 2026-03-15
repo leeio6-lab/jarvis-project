@@ -123,3 +123,94 @@ async def sync_calendar(
 
     logger.info("Calendar sync complete: %d events", synced)
     return {"synced": synced}
+
+
+async def create_calendar_event(
+    db: aiosqlite.Connection,
+    google_token: str | None = None,
+    *,
+    title: str,
+    date: str,
+    time: str,
+    duration_minutes: int = 60,
+    description: str | None = None,
+    location: str | None = None,
+) -> dict[str, Any]:
+    """Create a calendar event via Google Calendar API.
+
+    If no token, saves to local DB only (dry-run).
+    Returns: {created: bool, event_id, start, end, dry_run}
+    """
+    start_dt = datetime.fromisoformat(f"{date}T{time}:00")
+    end_dt = start_dt + timedelta(minutes=duration_minutes)
+
+    # Always save to local DB
+    event_id = f"jarvis_{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}"
+    await crud.upsert_calendar_event(
+        db,
+        google_event_id=event_id,
+        title=title,
+        description=description,
+        start_time=start_dt.isoformat(),
+        end_time=end_dt.isoformat(),
+        location=location,
+    )
+
+    if google_token and settings.has_google:
+        import httpx
+
+        body: dict[str, Any] = {
+            "summary": title,
+            "start": {"dateTime": start_dt.isoformat(), "timeZone": "Asia/Seoul"},
+            "end": {"dateTime": end_dt.isoformat(), "timeZone": "Asia/Seoul"},
+        }
+        if description:
+            body["description"] = description
+        if location:
+            body["location"] = location
+
+        try:
+            async with httpx.AsyncClient() as client:
+                resp = await client.post(
+                    "https://www.googleapis.com/calendar/v3/calendars/primary/events",
+                    headers={
+                        "Authorization": f"Bearer {google_token}",
+                        "Content-Type": "application/json",
+                    },
+                    json=body,
+                    timeout=30.0,
+                )
+                resp.raise_for_status()
+                result = resp.json()
+
+                # Update local with real Google event ID
+                await crud.upsert_calendar_event(
+                    db,
+                    google_event_id=result["id"],
+                    title=title,
+                    start_time=start_dt.isoformat(),
+                    end_time=end_dt.isoformat(),
+                )
+
+                logger.info("Created Google Calendar event: %s at %s", title, start_dt)
+                return {
+                    "created": True,
+                    "dry_run": False,
+                    "event_id": result["id"],
+                    "title": title,
+                    "start": start_dt.isoformat(),
+                    "end": end_dt.isoformat(),
+                    "link": result.get("htmlLink"),
+                }
+        except Exception:
+            logger.exception("Google Calendar create failed, saved locally")
+
+    return {
+        "created": True,
+        "dry_run": True,
+        "event_id": event_id,
+        "title": title,
+        "start": start_dt.isoformat(),
+        "end": end_dt.isoformat(),
+        "message": "Google Calendar 미연동 — 로컬에 저장됨",
+    }

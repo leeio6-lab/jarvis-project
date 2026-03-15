@@ -53,8 +53,8 @@ def build_google_auth_url() -> str:
         "response_type": "code",
         "scope": " ".join([
             "https://www.googleapis.com/auth/gmail.readonly",
-            "https://www.googleapis.com/auth/calendar.readonly",
-            "https://www.googleapis.com/auth/drive.readonly",
+            "https://www.googleapis.com/auth/calendar",
+            "https://www.googleapis.com/auth/drive.file",
         ]),
         "access_type": "offline",
         "prompt": "consent",
@@ -80,4 +80,74 @@ async def exchange_google_code(code: str) -> dict[str, Any]:
             timeout=30.0,
         )
         resp.raise_for_status()
-        return resp.json()
+        tokens = resp.json()
+        # Store expiry timestamp for later refresh checks
+        if "expires_in" in tokens:
+            tokens["expires_at"] = (
+                datetime.now(timezone.utc) + timedelta(seconds=tokens["expires_in"])
+            ).isoformat()
+        return tokens
+
+
+async def refresh_google_token(refresh_token: str) -> dict[str, Any]:
+    """Refresh an expired Google access token."""
+    import httpx
+
+    async with httpx.AsyncClient() as client:
+        resp = await client.post(
+            "https://oauth2.googleapis.com/token",
+            data={
+                "refresh_token": refresh_token,
+                "client_id": settings.google_client_id,
+                "client_secret": settings.google_client_secret,
+                "grant_type": "refresh_token",
+            },
+            timeout=30.0,
+        )
+        resp.raise_for_status()
+        tokens = resp.json()
+        tokens["refresh_token"] = refresh_token  # Google doesn't always return it
+        if "expires_in" in tokens:
+            tokens["expires_at"] = (
+                datetime.now(timezone.utc) + timedelta(seconds=tokens["expires_in"])
+            ).isoformat()
+        return tokens
+
+
+async def get_valid_google_token(db) -> str | None:
+    """Get a valid Google access token, refreshing if expired."""
+    import json
+    from server.database import crud
+
+    state = await crud.get_user_state(db)
+    if not state or not state.get("google_token"):
+        return None
+
+    try:
+        tokens = json.loads(state["google_token"])
+    except (json.JSONDecodeError, TypeError):
+        return None
+
+    access_token = tokens.get("access_token")
+    if not access_token:
+        return None
+
+    # Check if expired
+    expires_at = tokens.get("expires_at")
+    if expires_at:
+        try:
+            exp_dt = datetime.fromisoformat(expires_at)
+            if exp_dt < datetime.now(timezone.utc) + timedelta(minutes=5):
+                # Token expired or about to expire — refresh
+                refresh_token = tokens.get("refresh_token")
+                if not refresh_token:
+                    logger.warning("Google token expired and no refresh token")
+                    return None
+                logger.info("Refreshing expired Google token")
+                new_tokens = await refresh_google_token(refresh_token)
+                await crud.upsert_user_state(db, google_token=json.dumps(new_tokens))
+                return new_tokens.get("access_token")
+        except (ValueError, TypeError):
+            pass
+
+    return access_token

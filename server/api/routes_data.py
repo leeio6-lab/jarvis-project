@@ -163,6 +163,75 @@ async def generate_weekly_report(locale: str = Query(default="ko")):
     return {"type": "weekly", "content": content, "date": today}
 
 
+@router.get("/cost/summary")
+async def cost_summary():
+    """Get API cost summary for the current session."""
+    from server.utils.cost_tracker import tracker
+    return tracker.summary()
+
+
+@router.get("/cost/calls")
+async def cost_calls(limit: int = Query(default=50, le=200)):
+    """Get recent API call records with cost details."""
+    from server.utils.cost_tracker import tracker
+    calls = tracker.calls[-limit:]
+    return {
+        "calls": [
+            {
+                "model": c.model,
+                "input_tokens": c.input_tokens,
+                "output_tokens": c.output_tokens,
+                "cost_usd": c.cost_usd,
+                "latency_ms": c.latency_ms,
+                "purpose": c.purpose,
+                "timestamp": c.timestamp,
+            }
+            for c in calls
+        ],
+        "total_session_cost": round(tracker.total_cost, 4),
+    }
+
+
+@router.get("/google/status")
+async def google_status():
+    """Check Google OAuth connection status."""
+    from server.core.auth import get_valid_google_token
+    db = get_db()
+    token = await get_valid_google_token(db)
+    user_state = await crud.get_user_state(db)
+    has_token = bool(user_state and user_state.get("google_token"))
+    return {
+        "connected": bool(token),
+        "has_stored_token": has_token,
+        "login_url": "/auth/google/login" if not token else None,
+        "services": {
+            "gmail": bool(token),
+            "calendar": bool(token),
+            "drive": bool(token),
+        },
+    }
+
+
+@router.post("/google/sync")
+async def google_sync_all():
+    """Sync Gmail, Calendar, and Drive data from Google."""
+    from server.core.auth import get_valid_google_token
+    from server.crawlers.gmail_crawler import sync_emails
+    from server.crawlers.calendar_crawler import sync_calendar
+    from server.crawlers.drive_sync import sync_drive
+
+    db = get_db()
+    token = await get_valid_google_token(db)
+
+    results = {}
+    results["gmail"] = await sync_emails(db, google_token=token)
+    results["calendar"] = await sync_calendar(db, google_token=token)
+    results["drive"] = await sync_drive(db, google_token=token)
+    results["google_connected"] = bool(token)
+
+    return results
+
+
 @router.post("/drive/save")
 async def save_to_drive(
     filename: str = Query(...),

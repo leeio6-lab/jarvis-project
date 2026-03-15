@@ -178,13 +178,28 @@ async def handle_message(
     final = await call_llm(messages, tier="medium", system=ORCHESTRATOR_SYSTEM)
     final_text = extract_text(final)
 
-    # If the final response still contains raw tool text, clean it up
-    if "route_to_agent" in final_text:
+    # If the final response still contains raw tool/JSON text, clean it up
+    if "route_to_agent" in final_text or final_text.strip().startswith("{"):
         # The tool result IS the response — return it directly
         for tr in tool_results:
             content = tr.get("content", "")
             if content and len(content) > 5 and "route_to_agent" not in content:
+                # Try to extract clean text from JSON agent response
+                try:
+                    parsed = json.loads(content)
+                    if isinstance(parsed, dict) and "content" in parsed:
+                        return parsed["content"]
+                except (json.JSONDecodeError, TypeError):
+                    pass
                 return content
+    # Also clean up if final_text itself is JSON
+    if final_text.strip().startswith("{"):
+        try:
+            parsed = json.loads(final_text)
+            if isinstance(parsed, dict) and "content" in parsed:
+                return parsed["content"]
+        except (json.JSONDecodeError, TypeError):
+            pass
     return final_text
 
 
@@ -308,16 +323,19 @@ async def _execute_tool(
         return {"screen_texts": compact, "count": len(compact)}
 
     elif tool_name == "create_calendar_event":
-        # Dry-run: save to DB tasks as a proxy, do NOT call Google Calendar API
+        from server.core.auth import get_valid_google_token
+        from server.crawlers.calendar_crawler import create_calendar_event
         title = tool_input.get("title", "새 일정")
         date = tool_input.get("date", "")
         time_str = tool_input.get("time", "")
         duration = tool_input.get("duration_minutes", 60)
-        return {
-            "status": "dry_run",
-            "message": f"'{title}' 일정이 {date} {time_str}에 {duration}분간 등록 준비되었습니다. (Google Calendar 연동 전이라 dry-run 모드입니다)",
-            "event": {"title": title, "date": date, "time": time_str, "duration_minutes": duration},
-        }
+        google_token = await get_valid_google_token(db)
+        result = await create_calendar_event(
+            db, google_token,
+            title=title, date=date, time=time_str,
+            duration_minutes=duration,
+        )
+        return result
 
     elif tool_name == "get_productivity_score":
         from server.analytics.productivity_score import calculate_daily_score
