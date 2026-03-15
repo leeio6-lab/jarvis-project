@@ -13,29 +13,28 @@ from server.database.db import get_db
 
 logger = logging.getLogger(__name__)
 
-ORCHESTRATOR_SYSTEM = """당신은 윤정훈님의 전담 비서(오케스트레이터)입니다.
+ORCHESTRATOR_SYSTEM = """당신은 윤정훈님의 전담 비서입니다.
 사용자 질문을 분석해서 **필요한 도구를 전부** 호출하세요. 여러 개 동시 호출 가능.
 
-## 도구 선택 가이드
-- "내일 뭐 해야 해?" → get_upcoming_events + get_unreplied_emails + route_to_agent(task) 3개 동시
-- "오늘 뭐했어?" → get_activity_summary
-- "날씨 어때?", "주가?", "아까 본 거" → get_screen_texts(query=키워드)
-- "미답장 메일" → get_unreplied_emails
-- "일정" → get_upcoming_events
-- "회의 등록", "일정 추가" → create_calendar_event
-- "할 일 추가/완료/삭제" → route_to_agent(agent="task")
-- "브리핑" → route_to_agent(agent="briefing")
-- "생산성" → get_productivity_score
-- "XX 메일 뭐야?" → get_screen_texts(query=XX)
-- 전문 지식, 일반 대화 → route_to_agent(agent="chat")
+## 도구 선택
+- 복합 질문 ("내일 뭐 해야 해?") → 여러 도구 동시 호출
+- 화면 참조 ("날씨", "주가", "아까", "방금") → get_screen_texts
+- 활동 ("뭐 했어", "비업무") → get_activity_summary
+- 메일 ("미답장", "메일") → get_unreplied_emails
+- 일정 → get_upcoming_events
+- 등록 → create_calendar_event
+- 할 일 → route_to_agent(agent="task")
+- 생산성 → get_productivity_score
+- 전문 지식 → route_to_agent(agent="chat")
 
-## 핵심 원칙
-1. 복합 질문이면 도구 여러 개 호출. 하나만 호출하지 마.
-2. "아까", "방금", "전에" 등 과거 참조 → get_screen_texts
-3. 도구 결과를 종합해서 비서처럼 보고. "~입니다" 톤.
-4. 인사/응원 빼고 본론만. 이모지 없음.
-5. 도구 없이 직접 답변하지 마. 반드시 도구 호출.
-한국어로 응답."""
+## 응답 규칙
+1. **짧게. 3줄이면 충분.** 유저가 "자세히"라고 하면 그때 풀어서.
+   나쁜 예: 10줄 나열 후 "추가로 궁금하시면~"
+   좋은 예: "SAP 2시간 반, Excel 1시간. 미답장 5건, 월간보고서 오늘 마감."
+2. 도구명(get_screen_texts, get_activity_summary 등)을 **절대** 사용자에게 보여주지 마.
+3. 인사/응원/마무리 빼고 본론만.
+4. 반드시 도구 호출. 직접 답변 금지.
+한국어. 이모지 없음."""
 
 ORCHESTRATOR_TOOLS = [
     {
@@ -241,12 +240,9 @@ async def _try_fast_path(user_input: str, context: dict) -> str | None:
         {"role": "user", "content": f"사용자 질문: {user_input}\n\n데이터:\n{data_str}"},
     ]
     system = (
-        "당신은 윤정훈님의 전담 비서입니다. 월 300만원 받는 비서처럼 보고하세요. "
-        "데이터를 있는 그대로 활용. 없는 건 추측하지 마세요. "
-        "[비업무 사이트]에 나온 것은 반드시 비업무로 보고. "
-        "total_active_s가 0이어도 [업무/비업무 사이트] 데이터가 있으면 그것이 활동입니다. "
-        "톤: 비서가 보고하듯. 인사/응원 빼고 본론만. 이모지 없음. "
-        "미답장 메일을 보고할 때는 각 메일에 짧은 답장 초안(1줄)을 함께 제안하세요."
+        "당신은 윤정훈님의 전담 비서. 짧게 보고. 3줄이면 충분. "
+        "데이터에 있는 것만. 추측 금지. 도구명 노출 금지. "
+        "미답장 메일은 답장 초안(1줄) 포함. 이모지 없음."
     )
     response = await call_llm(messages, tier="medium", system=system, purpose="fast_path")
     return extract_text(response)
@@ -322,6 +318,23 @@ async def handle_message(
                 return parsed["content"]
         except (json.JSONDecodeError, TypeError):
             pass
+
+    # Safety: if response looks like a tool call description or contains tool names, retry
+    _TOOL_LEAK_PATTERNS = ["도구를 호출", "도구 호출", "get_screen_texts", "get_activity",
+                           "get_productivity", "get_unreplied", "route_to_agent", "get_upcoming"]
+    if any(p in final_text for p in _TOOL_LEAK_PATTERNS):
+        # Response leaked internal details — try to synthesize from tool_results
+        for tr in tool_results:
+            content = tr.get("content", "")
+            if content and len(content) > 20:
+                retry_msgs = [
+                    {"role": "user", "content": f"사용자 질문: {user_input}\n\n데이터:\n{content[:3000]}"},
+                ]
+                retry = await call_llm(retry_msgs, tier="medium",
+                    system="전담 비서. 짧게 3줄 이내로 보고. 도구명 금지. 이모지 없음.",
+                    purpose="tool_leak_retry")
+                return extract_text(retry)
+
     return final_text
 
 

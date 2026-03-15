@@ -28,6 +28,8 @@ COOLDOWN_HOURS = {
     "email_remind": 4,
     "deadline": 2,
     "promise_overdue": 8,
+    "meeting_soon": 0.5,  # 30 min
+    "evening_briefing": 12,
     "overtime": 2,
     "idle_check": 3,
 }
@@ -47,7 +49,7 @@ async def _in_cooldown(db: aiosqlite.Connection, alert_type: str) -> bool:
 
 
 async def check_unreplied_emails(db: aiosqlite.Connection) -> list[dict[str, Any]]:
-    """Emails unreplied for too long."""
+    """Emails unreplied for too long — with reply draft."""
     alerts = []
     unreplied = await crud.get_unreplied_emails(db, limit=50)
     now = datetime.now(timezone.utc)
@@ -62,24 +64,41 @@ async def check_unreplied_emails(db: aiosqlite.Connection) -> list[dict[str, Any
         hours_ago = (now - received_dt).total_seconds() / 3600
         priority = email.get("priority", "normal")
 
-        # High priority: alert after 1h. Normal: after 4h.
         threshold = 1 if priority == "high" else 4
         if hours_ago >= threshold:
             subject = email["subject"]
-            sender = email.get("sender", "unknown")
-            # Secretary tone based on urgency
+            # Generate a short reply draft based on subject
+            draft = _generate_reply_draft(subject)
+
             if hours_ago >= 48:
-                tone = f"'{subject}' — {int(hours_ago)}시간째 답장 안 하셨습니다. 놓치시면 안 되는 건이에요."
-            elif hours_ago >= 24:
-                tone = f"'{subject}' — 어제 받으신 건데 아직 답장 안 하셨어요. 짧게라도 회신하시는 게 좋겠습니다."
+                tone = f"'{subject}' 답장 {int(hours_ago)}시간째 안 하셨습니다. 놓치시면 안 돼요. 초안: \"{draft}\" — 보낼까요?"
+            elif hours_ago >= 12:
+                tone = f"'{subject}' 답장 아직인데, 짧게라도 보낼까요? 초안: \"{draft}\""
             else:
-                tone = f"'{subject}' — {int(hours_ago)}시간 전 수신. 확인 후 회신 부탁드립니다."
+                tone = f"'{subject}' {int(hours_ago)}시간 전 수신. 회신 필요합니다."
             alerts.append({
                 "type": "email_remind",
                 "title": f"미답장 메일 ({int(hours_ago)}시간 경과)",
                 "message": tone,
                 "reference_id": email.get("id"),
             })
+    return alerts
+
+
+def _generate_reply_draft(subject: str) -> str:
+    """Generate a 1-line reply draft based on email subject."""
+    s = subject.lower()
+    if "요청" in s or "부탁" in s:
+        return "요청 건 확인했습니다. 검토 후 회신드리겠습니다."
+    if "확인" in s or "조회" in s:
+        return "확인했습니다. 처리 후 안내드리겠습니다."
+    if "세금계산서" in s or "발행" in s:
+        return "세금계산서 발행 건 접수했습니다. 처리 후 보고드리겠습니다."
+    if "io코드" in s or "발주" in s:
+        return "IO코드 건 확인했습니다. 생성 후 전달드리겠습니다."
+    if "보고" in s or "검토" in s:
+        return "검토 중입니다. 완료 후 회신드리겠습니다."
+    return "확인했습니다. 검토 후 회신드리겠습니다."
     return alerts
 
 
@@ -170,6 +189,64 @@ async def check_overtime(db: aiosqlite.Connection) -> list[dict[str, Any]]:
     return alerts
 
 
+async def check_upcoming_meetings(db: aiosqlite.Connection) -> list[dict[str, Any]]:
+    """Meeting starting within 30 minutes — remind with context."""
+    alerts = []
+    now = datetime.now(timezone.utc)
+    window = now + timedelta(minutes=30)
+
+    events = await crud.get_upcoming_events(
+        db, since=now.isoformat(), until=window.isoformat()
+    )
+    for ev in events:
+        title = ev.get("title", "회의")
+        start = ev.get("start_time", "")[:16]
+        location = ev.get("location") or ""
+        loc_str = f" ({location})" if location else ""
+
+        # Try to find related screen_texts for context
+        context_hint = ""
+        try:
+            texts = await crud.get_screen_texts(db, limit=20)
+            keywords = title.lower().split()
+            for t in texts:
+                text_lower = (t.get("extracted_text") or "").lower()
+                if any(kw in text_lower for kw in keywords if len(kw) > 2):
+                    context_hint = f" 최근에 관련 자료를 확인하셨으니 준비해가세요."
+                    break
+        except Exception:
+            pass
+
+        alerts.append({
+            "type": "meeting_soon",
+            "title": f"회의 30분 전",
+            "message": f"'{title}' {start}{loc_str} — 30분 남았습니다.{context_hint}",
+        })
+    return alerts
+
+
+async def check_end_of_day(db: aiosqlite.Connection) -> list[dict[str, Any]]:
+    """18:00 KST — auto-generate evening briefing."""
+    alerts = []
+    now = datetime.now(timezone.utc)
+    local_hour = (now + timedelta(hours=9)).hour
+
+    if local_hour == 18:
+        from server.agents.briefing import BriefingAgent
+        try:
+            agent = BriefingAgent()
+            context = {"db": db, "locale": "ko"}
+            content = await agent.generate_briefing(context, briefing_type="evening")
+            alerts.append({
+                "type": "evening_briefing",
+                "title": "퇴근 브리핑",
+                "message": content[:500],
+            })
+        except Exception:
+            logger.exception("Auto evening briefing failed")
+    return alerts
+
+
 async def run_proactive_check(db: aiosqlite.Connection) -> list[dict[str, Any]]:
     """Run all proactive checks and return new alerts (respecting cooldowns)."""
     all_alerts = []
@@ -178,6 +255,8 @@ async def run_proactive_check(db: aiosqlite.Connection) -> list[dict[str, Any]]:
         check_unreplied_emails,
         check_upcoming_deadlines,
         check_overdue_promises,
+        check_upcoming_meetings,
+        check_end_of_day,
         check_overtime,
     ]
 
