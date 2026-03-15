@@ -28,12 +28,11 @@ ORCHESTRATOR_SYSTEM = """당신은 윤정훈님의 전담 비서입니다.
 - 전문 지식 → route_to_agent(agent="chat")
 
 ## 응답 규칙
-1. **짧게. 3줄이면 충분.** 유저가 "자세히"라고 하면 그때 풀어서.
-   나쁜 예: 10줄 나열 후 "추가로 궁금하시면~"
-   좋은 예: "SAP 2시간 반, Excel 1시간. 미답장 5건, 월간보고서 오늘 마감."
-2. 도구명(get_screen_texts, get_activity_summary 등)을 **절대** 사용자에게 보여주지 마.
-3. 인사/응원/마무리 빼고 본론만.
-4. 반드시 도구 호출. 직접 답변 금지.
+1. **기본은 짧게. 3줄.** 유저가 "자세히"라고 하면 그때 풀어서.
+2. 단, **미답장 메일 질문에는 상세하게**: 각 건마다 왜 급한지 + 뭘 하면 되는지 + 답장 초안.
+3. 도구명을 **절대** 사용자에게 보여주지 마.
+4. 인사/응원/마무리 빼고 본론만.
+5. 반드시 도구 호출. 직접 답변 금지.
 한국어. 이모지 없음."""
 
 ORCHESTRATOR_TOOLS = [
@@ -137,14 +136,16 @@ ORCHESTRATOR_TOOLS = [
 
 # ── Fast-path patterns: skip orchestrator LLM, go directly to data+synthesis ──
 
-# Fast-path: 단순 1:1 조회만. 복합 질문은 오케스트레이터 LLM이 판단.
+# Fast-path: 확실한 패턴만. 복합 질문은 오케스트레이터 LLM이 판단.
 _FAST_PATTERNS = {
-    # 확실한 단순 조회만 여기에. 애매한 건 LLM한테.
     "할 일 보여": "list_tasks",
     "할일 보여": "list_tasks",
     "할 일 목록": "list_tasks",
     "미답장 메일": "unreplied_emails",
     "답장 안 한": "unreplied_emails",
+    "답변해야": "unreplied_emails",
+    "당장": "unreplied_emails",
+    "급한 메일": "unreplied_emails",
 }
 
 
@@ -230,7 +231,7 @@ async def _try_fast_path(user_input: str, context: dict) -> str | None:
         data_str = f"미답장 메일 {len(emails)}건:\n" + "\n".join(lines)
         if len(emails) > 10:
             data_str += f"\n외 {len(emails) - 10}건"
-        data_str += "\n\n비서 지시: 각 메일에 대해 짧은 답장 초안(1~2줄)을 제안해주세요. '확인했습니다, 검토 후 회신드리겠습니다' 같은 수준."
+        data_str += "\n\n비서 지시: 각 메일마다 1) 왜 급한지 2) 뭘 하면 되는지 3) 답장 초안을 붙여서 보고. 같은 초안 반복 금지, 건마다 다르게."
 
     if not data_str:
         return None
