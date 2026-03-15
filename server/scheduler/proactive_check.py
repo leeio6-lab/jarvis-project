@@ -17,12 +17,18 @@ logger = logging.getLogger(__name__)
 _task: asyncio.Task | None = None
 
 
-async def _proactive_loop(interval_minutes: int = 30) -> None:
+async def _proactive_loop(interval_minutes: int = 5) -> None:
     """Background loop that runs proactive checks periodically."""
     logger.info("Proactive check loop started (interval: %dm)", interval_minutes)
+    # Run immediately on startup, then on interval
+    first_run = True
     while True:
         try:
-            await asyncio.sleep(interval_minutes * 60)
+            if first_run:
+                await asyncio.sleep(10)  # Wait 10s for DB init
+                first_run = False
+            else:
+                await asyncio.sleep(interval_minutes * 60)
             db = get_db()
             alerts = await run_proactive_check(db)
             if alerts:

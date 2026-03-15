@@ -62,8 +62,8 @@ async def check_unreplied_emails(db: aiosqlite.Connection) -> list[dict[str, Any
         hours_ago = (now - received_dt).total_seconds() / 3600
         priority = email.get("priority", "normal")
 
-        # High priority: alert after 24h. Normal: after 48h.
-        threshold = 24 if priority == "high" else 48
+        # High priority: alert after 1h. Normal: after 4h.
+        threshold = 1 if priority == "high" else 4
         if hours_ago >= threshold:
             alerts.append({
                 "type": "email_remind",

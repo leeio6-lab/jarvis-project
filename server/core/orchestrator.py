@@ -138,6 +138,129 @@ ORCHESTRATOR_TOOLS = [
 ]
 
 
+# ── Fast-path patterns: skip orchestrator LLM, go directly to data+synthesis ──
+
+_FAST_PATTERNS = {
+    "할 일 보여": "list_tasks",
+    "할일 보여": "list_tasks",
+    "할 일 목록": "list_tasks",
+    "투두 보여": "list_tasks",
+    "미답장 메일": "unreplied_emails",
+    "답장 안 한": "unreplied_emails",
+    "안 읽은 메일": "unreplied_emails",
+    "급한 메일": "unreplied_emails",
+    "오늘 일정": "upcoming_events",
+    "내일 일정": "upcoming_events",
+    "일정 알려": "upcoming_events",
+    "생산성 점수": "productivity_score",
+    "생산성 어때": "productivity_score",
+    "오늘 뭐 했": "activity_summary",
+    "오늘 뭐했": "activity_summary",
+    "뭐 했어": "activity_summary",
+    "업무 외": "activity_summary",
+    "비업무": "activity_summary",
+}
+
+
+async def _try_fast_path(user_input: str, context: dict) -> str | None:
+    """Fast-path: directly fetch data and synthesize response in 1 LLM call."""
+    db = context["db"]
+    lower = user_input.lower().replace(" ", "")
+
+    matched_action = None
+    for pattern, action in _FAST_PATTERNS.items():
+        if pattern.replace(" ", "") in lower:
+            matched_action = action
+            break
+
+    if not matched_action:
+        return None
+
+    # Fetch data directly from DB
+    data_str = ""
+    if matched_action == "list_tasks":
+        tasks = await crud.get_tasks(db, status="pending", limit=30)
+        if not tasks:
+            return "현재 등록된 할 일이 없습니다."
+        lines = []
+        for t in tasks:
+            line = f"- {t.get('title', '?')}"
+            if t.get("due_date"):
+                line += f" (마감: {t['due_date']})"
+            if t.get("priority") and t["priority"] != "normal":
+                line += f" [{t['priority']}]"
+            lines.append(line)
+        data_str = f"할 일 {len(tasks)}건:\n" + "\n".join(lines)
+
+    elif matched_action == "unreplied_emails":
+        emails = await crud.get_unreplied_emails(db, limit=20)
+        if not emails:
+            return "현재 미답장 메일이 없습니다."
+        lines = []
+        for e in emails:
+            p = " [긴급]" if e.get("priority") == "high" else ""
+            lines.append(f"- {e.get('subject', '?')}{p} (from {e.get('sender', '?')})")
+        data_str = f"미답장 메일 {len(emails)}건:\n" + "\n".join(lines[:10])
+        if len(emails) > 10:
+            data_str += f"\n... 외 {len(emails) - 10}건"
+
+    elif matched_action == "upcoming_events":
+        from datetime import datetime, timedelta, timezone
+        now = datetime.now(timezone.utc)
+        events = await crud.get_upcoming_events(
+            db, since=now.isoformat(), until=(now + timedelta(days=3)).isoformat()
+        )
+        if not events:
+            return "예정된 일정이 없습니다."
+        lines = []
+        for e in events:
+            lines.append(f"- {e.get('title', '?')} ({e.get('start_time', '?')[:16]} ~ {e.get('end_time', '?')[:16]})")
+            if e.get("location"):
+                lines[-1] += f" @ {e['location']}"
+        data_str = f"일정 {len(events)}건:\n" + "\n".join(lines)
+
+    elif matched_action == "productivity_score":
+        from server.analytics.productivity_score import calculate_daily_score
+        score = await calculate_daily_score(db)
+        data_str = json.dumps(score, ensure_ascii=False)
+
+    elif matched_action == "activity_summary":
+        from server.analytics.activity_analyzer import get_daily_summary
+        summary = await get_daily_summary(db)
+        # Explicitly separate work vs leisure sites for the LLM
+        visited = summary.get("visited_sites", [])
+        work_sites = [s for s in visited if s.get("category") == "work"]
+        leisure_sites = [s for s in visited if s.get("category") == "leisure"]
+        neutral_sites = [s for s in visited if s.get("category") not in ("work", "leisure")]
+        extra = ""
+        if work_sites:
+            extra += "\n\n[업무 사이트]\n" + "\n".join(f"- {s['app']}: {s['title']}" for s in work_sites[:10])
+        if leisure_sites:
+            extra += "\n\n[비업무 사이트 — 쇼핑/동영상/뉴스/부동산 등]\n" + "\n".join(f"- {s['app']}: {s['title']}" for s in leisure_sites[:10])
+        if neutral_sites:
+            extra += "\n\n[기타]\n" + "\n".join(f"- {s['app']}: {s['title']}" for s in neutral_sites[:5])
+        # Remove visited_sites from summary to save tokens, use the formatted version instead
+        summary.pop("visited_sites", None)
+        data_str = json.dumps(summary, ensure_ascii=False, default=str)[:1500] + extra
+
+    if not data_str:
+        return None
+
+    # Single LLM call to synthesize natural response
+    messages = [
+        {"role": "user", "content": f"사용자 질문: {user_input}\n\n데이터:\n{data_str}"},
+    ]
+    system = (
+        "당신은 J.A.R.V.I.S 비서입니다. 위 데이터를 바탕으로 사용자 질문에 간결하고 자연스러운 한국어로 답하세요. "
+        "데이터를 있는 그대로 활용하세요. 추측하지 마세요. "
+        "중요: [비업무 사이트] 섹션에 나온 것은 반드시 비업무 활동으로 보고하세요. "
+        "total_active_s가 0이어도, [업무 사이트]와 [비업무 사이트]에 데이터가 있으면 그것이 오늘의 활동입니다. "
+        "이모지 쓰지 마세요."
+    )
+    response = await call_llm(messages, tier="medium", system=system, purpose="fast_path")
+    return extract_text(response)
+
+
 async def handle_message(
     user_input: str,
     context: dict[str, Any] | None = None,
@@ -147,6 +270,11 @@ async def handle_message(
     db = context.get("db") or get_db()
     context["db"] = db
 
+    # ── Fast-path: skip orchestrator LLM call for obvious patterns ──
+    fast = await _try_fast_path(user_input, context)
+    if fast is not None:
+        return fast
+
     messages = []
     history = context.get("history", [])
     for h in history[-6:]:
@@ -154,7 +282,8 @@ async def handle_message(
     messages.append({"role": "user", "content": user_input})
 
     response = await call_llm(
-        messages, tier="medium", system=ORCHESTRATOR_SYSTEM, tools=ORCHESTRATOR_TOOLS
+        messages, tier="medium", system=ORCHESTRATOR_SYSTEM, tools=ORCHESTRATOR_TOOLS,
+        purpose="orchestrator",
     )
 
     tool_calls = extract_tool_calls(response)

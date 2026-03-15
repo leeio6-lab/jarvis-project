@@ -92,7 +92,7 @@ async def get_daily_summary(
                 return "work"
         return "neutral"
 
-    screen_texts = await crud.get_screen_texts(db, since=since, limit=50)
+    screen_texts = await crud.get_screen_texts(db, since=since, limit=200)
     visited_sites: list[dict[str, Any]] = []
     seen = set()
     for st in screen_texts:
@@ -120,7 +120,7 @@ async def get_daily_summary(
         "mobile": {"total_s": mobile_total, "apps": mobile_apps[:10]},
         "pc": {"total_s": pc_total, "apps": pc_apps[:10]},
         "top_apps": all_apps[:10],
-        "visited_sites": visited_sites[:15],
+        "visited_sites": visited_sites,  # All unique sites, sorted by work→neutral→leisure
         "unreplied_emails": len(unreplied),
         "pending_promises": len(promises),
         "upcoming_events": len(events),
