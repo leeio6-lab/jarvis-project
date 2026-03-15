@@ -65,10 +65,19 @@ async def check_unreplied_emails(db: aiosqlite.Connection) -> list[dict[str, Any
         # High priority: alert after 1h. Normal: after 4h.
         threshold = 1 if priority == "high" else 4
         if hours_ago >= threshold:
+            subject = email["subject"]
+            sender = email.get("sender", "unknown")
+            # Secretary tone based on urgency
+            if hours_ago >= 48:
+                tone = f"'{subject}' — {int(hours_ago)}시간째 답장 안 하셨습니다. 놓치시면 안 되는 건이에요."
+            elif hours_ago >= 24:
+                tone = f"'{subject}' — 어제 받으신 건데 아직 답장 안 하셨어요. 짧게라도 회신하시는 게 좋겠습니다."
+            else:
+                tone = f"'{subject}' — {int(hours_ago)}시간 전 수신. 확인 후 회신 부탁드립니다."
             alerts.append({
                 "type": "email_remind",
                 "title": f"미답장 메일 ({int(hours_ago)}시간 경과)",
-                "message": f"'{email['subject']}' (from {email['sender']}) - {int(hours_ago)}시간 전 수신, 아직 답장하지 않았습니다.",
+                "message": tone,
                 "reference_id": email.get("id"),
             })
     return alerts
@@ -94,10 +103,17 @@ async def check_upcoming_deadlines(db: aiosqlite.Connection) -> list[dict[str, A
 
         if now <= due_dt <= deadline:
             hours_left = (due_dt - now).total_seconds() / 3600
+            title = task["title"]
+            if hours_left <= 4:
+                tone = f"'{title}' — {int(hours_left)}시간 남았습니다. 지금 시작하셔야 해요."
+            elif hours_left <= 12:
+                tone = f"'{title}' — 오늘 안에 마감입니다. 오후에 시간 내서 처리하시면 됩니다."
+            else:
+                tone = f"'{title}' — 내일 마감입니다. 오늘 중으로 준비해두시면 좋겠습니다."
             alerts.append({
                 "type": "deadline",
-                "title": f"마감 임박 ({int(hours_left)}시간 남음)",
-                "message": f"'{task['title']}' 마감이 {int(hours_left)}시간 후입니다.",
+                "title": "마감 임박",
+                "message": tone,
                 "reference_id": task.get("id"),
             })
     return alerts
@@ -149,7 +165,7 @@ async def check_overtime(db: aiosqlite.Connection) -> list[dict[str, Any]]:
             alerts.append({
                 "type": "overtime",
                 "title": "야근 감지",
-                "message": f"현재 시각 {(local_hour):02d}시입니다. 아직 PC 활동이 감지됩니다. 오늘은 이만 쉬는 것은 어떨까요?",
+                "message": f"지금 {local_hour}시입니다. 오늘 많이 하셨으니 나머지는 내일 하셔도 됩니다.",
             })
     return alerts
 
@@ -210,6 +226,6 @@ class ProactiveAgent(BaseAgent):
         messages = [
             {"role": "user", "content": f"다음 프로액티브 알림들을 자연스러운 한국어로 요약해 주세요:\n\n{alert_text}"},
         ]
-        system = "당신은 J.A.R.V.I.S 비서입니다. 프로액티브 알림을 간결하고 자연스럽게 전달하세요. 이모지 사용하지 마세요."
+        system = "당신은 윤정훈님의 전담 비서입니다. 알림을 비서가 슬쩍 말해주듯 전달하세요. 인사 없이 바로 본론. 이모지 없음."
         response = await call_llm(messages, tier="light", system=system)
         return extract_text(response)
