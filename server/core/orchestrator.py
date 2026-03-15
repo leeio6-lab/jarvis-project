@@ -196,13 +196,34 @@ async def _try_fast_path(user_input: str, context: dict) -> str | None:
         emails = await crud.get_unreplied_emails(db, limit=20)
         if not emails:
             return "현재 미답장 메일이 없습니다."
+        # Calculate hours since received
+        from datetime import datetime, timezone
+        now = datetime.now(timezone.utc)
         lines = []
-        for e in emails:
-            p = " [긴급]" if e.get("priority") == "high" else ""
-            lines.append(f"- {e.get('subject', '?')}{p} (from {e.get('sender', '?')})")
-        data_str = f"미답장 메일 {len(emails)}건:\n" + "\n".join(lines[:10])
+        for e in emails[:10]:
+            subject = e.get("subject", "?")
+            sender = e.get("sender", "unknown")
+            priority = e.get("priority", "normal")
+            received = e.get("received_at", "")
+            # Calculate elapsed time
+            hours_str = ""
+            try:
+                recv_dt = datetime.fromisoformat(received.replace("Z", "+00:00"))
+                hours = (now - recv_dt).total_seconds() / 3600
+                if hours >= 48:
+                    hours_str = f" — {int(hours)}시간 경과, 긴급 회신 필요"
+                elif hours >= 24:
+                    hours_str = f" — {int(hours)}시간 경과"
+                else:
+                    hours_str = f" — {int(hours)}시간 전 수신"
+            except (ValueError, TypeError):
+                pass
+            urgency = "[최우선]" if priority == "high" and sender != "unknown" else "[긴급]" if priority == "high" else ""
+            lines.append(f"- {subject} {urgency} (from {sender}){hours_str}")
+        data_str = f"미답장 메일 {len(emails)}건:\n" + "\n".join(lines)
         if len(emails) > 10:
-            data_str += f"\n... 외 {len(emails) - 10}건"
+            data_str += f"\n외 {len(emails) - 10}건"
+        data_str += "\n\n비서 지시: 각 메일에 대해 짧은 답장 초안(1~2줄)을 제안해주세요. '확인했습니다, 검토 후 회신드리겠습니다' 같은 수준."
 
     elif matched_action == "upcoming_events":
         from datetime import datetime, timedelta, timezone
@@ -251,11 +272,12 @@ async def _try_fast_path(user_input: str, context: dict) -> str | None:
         {"role": "user", "content": f"사용자 질문: {user_input}\n\n데이터:\n{data_str}"},
     ]
     system = (
-        "당신은 J.A.R.V.I.S 비서입니다. 위 데이터를 바탕으로 사용자 질문에 간결하고 자연스러운 한국어로 답하세요. "
-        "데이터를 있는 그대로 활용하세요. 추측하지 마세요. "
-        "중요: [비업무 사이트] 섹션에 나온 것은 반드시 비업무 활동으로 보고하세요. "
-        "total_active_s가 0이어도, [업무 사이트]와 [비업무 사이트]에 데이터가 있으면 그것이 오늘의 활동입니다. "
-        "이모지 쓰지 마세요."
+        "당신은 윤정훈님의 전담 비서입니다. 월 300만원 받는 비서처럼 보고하세요. "
+        "데이터를 있는 그대로 활용. 없는 건 추측하지 마세요. "
+        "[비업무 사이트]에 나온 것은 반드시 비업무로 보고. "
+        "total_active_s가 0이어도 [업무/비업무 사이트] 데이터가 있으면 그것이 활동입니다. "
+        "톤: 비서가 보고하듯. 인사/응원 빼고 본론만. 이모지 없음. "
+        "미답장 메일을 보고할 때는 각 메일에 짧은 답장 초안(1줄)을 함께 제안하세요."
     )
     response = await call_llm(messages, tier="medium", system=system, purpose="fast_path")
     return extract_text(response)
