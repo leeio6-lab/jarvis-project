@@ -18,22 +18,24 @@ ORCHESTRATOR_SYSTEM = """당신은 J.A.R.V.I.S 오케스트레이터입니다.
 
 중요: 절대로 도구 없이 직접 답변하지 마세요. 어떤 질문이든 반드시 아래 도구 중 하나를 호출하세요.
 
-라우팅 규칙:
-- 일반 대화/인사/감사/지식 질문 → route_to_agent(agent="chat")
-- 브리핑 ("브리핑", "요약해줘", "정리해줘") → route_to_agent(agent="briefing")
-- 할 일 관리 ("할 일 추가", "TODO", "할 일 보여줘") → route_to_agent(agent="task")
-- 활동 조회 ("오늘 뭐 했어", "앱 사용 시간", "SAP 얼마나") → get_activity_summary
-- 미답장 메일 ("안 읽은 메일", "메일 알려줘") → get_unreplied_emails
-- 일정 조회 ("오늘 일정", "내일 회의") → get_upcoming_events
-- 일정 등록 ("회의 등록", "일정 추가해줘") → create_calendar_event
-- 약속 ("약속 현황") → get_promises
-- 화면에서 본 것, 아까/방금 본 것, 특정 내용 검색 → get_screen_texts
-  예: "웍스에서 뭐 봤어", "임상민 메일 뭐야", "아까 환율 얼마였어?", "방금 본 거 뭐야?", "뉴스에서 뭐 봤어?"
-  "아까", "방금", "전에", "얼마였어" 같은 과거 참조 표현이 있으면 get_screen_texts를 사용하세요.
-- 생산성 ("생산성 어때", "생산성 점수", "얼마나 일했어") → get_productivity_score
-- 업무/비업무 분류 ("업무 외 활동", "뭐가 비업무야") → get_activity_summary
+라우팅 규칙 (우선순위 순서):
+1. 화면 데이터 검색 → get_screen_texts (query 파라미터에 키워드)
+   - 사용자가 최근에 본 것: "날씨 어때?", "주가 얼마야?", "환율?", "뉴스 뭐 나와?"
+   - 과거 참조: "아까", "방금", "전에", "얼마였어"
+   - 특정 사이트/앱 질문: "웍스에서 뭐 봤어", "SAP에서 뭐 했어"
+   - 핵심: 사용자가 뭔가를 "본 적이 있을 수 있는" 질문이면 무조건 get_screen_texts
+2. 활동 조회 → get_activity_summary: "오늘 뭐 했어", "업무 외 활동", "비업무"
+3. 미답장 메일 → get_unreplied_emails: "메일", "미답장", "급한 거", "중요한 일"
+4. 일정 조회 → get_upcoming_events: "오늘 일정", "내일 회의"
+5. 일정 등록 → create_calendar_event: "회의 등록", "일정 추가"
+6. 할 일 → route_to_agent(agent="task"): "할 일 추가/보여줘/삭제"
+7. 브리핑 → route_to_agent(agent="briefing"): "브리핑", "요약"
+8. 생산성 → get_productivity_score: "생산성 점수"
+9. 약속 → get_promises: "약속 현황"
+10. 전문 지식/일반 대화 → route_to_agent(agent="chat"): 위에 해당 안 되는 것
 
-중요: "아까", "방금", "전에" 같은 과거 참조 + 특정 내용 질문은 반드시 get_screen_texts를 호출하세요.
+핵심 원칙: 사용자가 PC에서 무언가를 보면서 질문하는 상황을 항상 가정하세요.
+"날씨", "주가", "환율", "뉴스" 같은 키워드가 있으면 get_screen_texts(query=키워드)를 먼저 호출하세요.
 도구를 호출한 뒤 결과를 바탕으로 사용자에게 자연스럽게 답변하세요.
 한국어로 응답합니다."""
 
@@ -235,21 +237,31 @@ async def _try_text_fallback(
         return None
 
     # Check for other tool patterns in text — execute and synthesize response
-    for tool_name in ["get_screen_texts", "get_activity_summary", "get_productivity_score",
-                      "get_unreplied_emails", "get_upcoming_events", "get_promises",
-                      "create_calendar_event"]:
+    tool_names = [
+        "get_screen_texts", "get_activity_summary", "get_productivity_score",
+        "get_unreplied_emails", "get_upcoming_events", "get_promises",
+        "create_calendar_event",
+    ]
+    for tool_name in tool_names:
         if tool_name in text:
             result = await _execute_tool(tool_name, {}, context)
             content = result if isinstance(result, str) else json.dumps(result, ensure_ascii=False)
-            # Instead of sending back as tool_result (which needs valid tool_use_id),
-            # send the data as a user message asking for a natural-language summary
-            messages.append({"role": "assistant", "content": f"도구 {tool_name}을(를) 호출하겠습니다."})
-            messages.append({
-                "role": "user",
-                "content": f"[시스템] 도구 결과입니다. 이 데이터를 바탕으로 사용자에게 자연스러운 한국어로 답변하세요:\n{content}",
-            })
-            final = await call_llm(messages, tier="medium", system=ORCHESTRATOR_SYSTEM)
-            return extract_text(final)
+            # Build a clean follow-up asking LLM to summarize
+            synthesis_messages = [
+                {"role": "user", "content": user_input},
+                {"role": "assistant", "content": f"{tool_name} 결과를 조회했습니다."},
+                {
+                    "role": "user",
+                    "content": f"아래는 조회 결과입니다. 이 데이터를 바탕으로 사용자의 원래 질문 '{user_input}'에 자연스러운 한국어로 답변하세요. 도구명이나 JSON을 사용자에게 보여주지 마세요.\n\n{content[:3000]}",
+                },
+            ]
+            final = await call_llm(synthesis_messages, tier="medium", system=ORCHESTRATOR_SYSTEM, purpose="fallback_synthesis")
+            final_text = extract_text(final)
+            # Safety: if still contains tool names, strip them
+            for tn in tool_names:
+                if final_text.strip() == tn:
+                    return f"데이터를 조회했습니다. 현재 관련 정보가 제한적입니다."
+            return final_text
 
     return None
 
