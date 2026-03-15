@@ -122,6 +122,27 @@ async def google_callback(code: str = Query(...)):
         tokens = await exchange_google_code(code)
         db = get_db()
         await crud.upsert_user_state(db, google_token=json.dumps(tokens))
+
+        # Immediately sync all Google data
+        token = tokens.get("access_token")
+        if token:
+            from server.crawlers.gmail_crawler import sync_emails
+            from server.crawlers.calendar_crawler import sync_calendar
+            from server.crawlers.drive_sync import sync_drive
+
+            gmail_result = await sync_emails(db, google_token=token, max_results=50)
+            cal_result = await sync_calendar(db, google_token=token)
+            drive_result = await sync_drive(db, google_token=token)
+            logger.info(
+                "Initial Google sync: gmail=%s, calendar=%s, drive=%s",
+                gmail_result, cal_result, drive_result,
+            )
+            return {
+                "status": "ok",
+                "message": "Google 계정 연결 완료! Gmail/Calendar/Drive 데이터를 동기화했습니다.",
+                "sync": {"gmail": gmail_result, "calendar": cal_result, "drive": drive_result},
+            }
+
         return {"status": "ok", "message": "Google 계정이 연결되었습니다."}
     except Exception as e:
         logger.warning("Google OAuth callback failed: %s", e)
