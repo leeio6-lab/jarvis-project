@@ -145,6 +145,9 @@ _FAST_PATTERNS = {
     "할일 보여": "list_tasks",
     "할 일 목록": "list_tasks",
     "투두 보여": "list_tasks",
+    "할 일 뭐": "list_tasks",
+    "할일 뭐": "list_tasks",
+    "뭐 남았어": "list_tasks",
     "미답장 메일": "unreplied_emails",
     "답장 안 한": "unreplied_emails",
     "안 읽은 메일": "unreplied_emails",
@@ -152,6 +155,7 @@ _FAST_PATTERNS = {
     "오늘 일정": "upcoming_events",
     "내일 일정": "upcoming_events",
     "일정 알려": "upcoming_events",
+    "내일 뭐": "upcoming_events",
     "생산성 점수": "productivity_score",
     "생산성 어때": "productivity_score",
     "오늘 뭐 했": "activity_summary",
@@ -160,6 +164,9 @@ _FAST_PATTERNS = {
     "업무 외": "activity_summary",
     "비업무": "activity_summary",
 }
+
+# Names/keywords that trigger screen_text search
+_SCREEN_SEARCH_TRIGGERS = ["메일 뭐", "메일 내용", "뭐야", "뭐 보냈"]
 
 
 async def _try_fast_path(user_input: str, context: dict) -> str | None:
@@ -174,7 +181,11 @@ async def _try_fast_path(user_input: str, context: dict) -> str | None:
             break
 
     if not matched_action:
-        return None
+        # Check for name + "메일" pattern → screen_text search
+        if "메일" in lower and any(trigger.replace(" ", "") in lower for trigger in _SCREEN_SEARCH_TRIGGERS):
+            matched_action = "screen_search"
+        else:
+            return None
 
     # Fetch data directly from DB
     data_str = ""
@@ -182,15 +193,36 @@ async def _try_fast_path(user_input: str, context: dict) -> str | None:
         tasks = await crud.get_tasks(db, status="pending", limit=30)
         if not tasks:
             return "현재 등록된 할 일이 없습니다."
+        # Sort by due_date (soonest first), nulls last
+        from datetime import datetime, timezone
+        now = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+        def sort_key(t):
+            d = t.get("due_date", "9999-12-31")
+            return d if d else "9999-12-31"
+        tasks.sort(key=sort_key)
+
         lines = []
         for t in tasks:
-            line = f"- {t.get('title', '?')}"
-            if t.get("due_date"):
-                line += f" (마감: {t['due_date']})"
-            if t.get("priority") and t["priority"] != "normal":
-                line += f" [{t['priority']}]"
+            due = t.get("due_date", "")
+            title = t.get("title", "?")
+            urgent = ""
+            if due and due <= now:
+                urgent = " [오늘 마감!]"
+            elif due:
+                try:
+                    days_left = (datetime.fromisoformat(due) - datetime.fromisoformat(now)).days
+                    if days_left == 1:
+                        urgent = " [내일 마감]"
+                    elif days_left <= 3:
+                        urgent = f" [{days_left}일 남음]"
+                except (ValueError, TypeError):
+                    pass
+            p = " [우선]" if t.get("priority") == "high" else ""
+            line = f"- {title} (마감: {due}){urgent}{p}" if due else f"- {title}{p}"
             lines.append(line)
-        data_str = f"할 일 {len(tasks)}건:\n" + "\n".join(lines)
+        data_str = f"할 일 {len(tasks)}건 (마감순):\n" + "\n".join(lines)
+        data_str += "\n\n비서 지시: 마감이 임박한 것을 강조하고, 어떻게 처리하면 좋을지 한마디씩 붙여주세요."
 
     elif matched_action == "unreplied_emails":
         emails = await crud.get_unreplied_emails(db, limit=20)
@@ -224,6 +256,30 @@ async def _try_fast_path(user_input: str, context: dict) -> str | None:
         if len(emails) > 10:
             data_str += f"\n외 {len(emails) - 10}건"
         data_str += "\n\n비서 지시: 각 메일에 대해 짧은 답장 초안(1~2줄)을 제안해주세요. '확인했습니다, 검토 후 회신드리겠습니다' 같은 수준."
+
+    elif matched_action == "screen_search":
+        # Extract search query from user input (remove common words)
+        import re
+        query = re.sub(r'(메일|뭐야|뭐|알려줘|보여줘|내용|\?)', '', user_input).strip()
+        if not query:
+            query = user_input
+        texts = await crud.get_screen_texts(db, limit=100)
+        q_lower = query.lower()
+        matches = [
+            t for t in texts
+            if q_lower in (t.get("extracted_text") or "").lower()
+            or q_lower in (t.get("window_title") or "").lower()
+            or q_lower in (t.get("app_name") or "").lower()
+        ]
+        if not matches:
+            return f"'{query}' 관련 화면 데이터를 찾지 못했습니다."
+        lines = []
+        for m in matches[:5]:
+            title = (m.get("window_title") or "")[:60]
+            text = (m.get("extracted_text") or "")[:300]
+            ts = (m.get("timestamp") or "")[:16]
+            lines.append(f"[{ts}] {title}\n{text}")
+        data_str = f"'{query}' 관련 화면 데이터 {len(matches)}건:\n\n" + "\n---\n".join(lines)
 
     elif matched_action == "upcoming_events":
         from datetime import datetime, timedelta, timezone
